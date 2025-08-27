@@ -10,7 +10,11 @@ export default function PricingPlans() {
       icon: Zap,
       color: 'from-gray-500 to-gray-600',
       storage: '2 GB',
+<<<<<<< HEAD
       bandwidth: '10 GB',
+=======
+      bandwidth: '4 GB',
+>>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
       cta: 'Start Free',
       popular: false
     },
@@ -21,7 +25,11 @@ export default function PricingPlans() {
       icon: Smartphone,
       color: 'from-green-600 to-green-700',
       storage: '30 GB',
+<<<<<<< HEAD
       bandwidth: '150 GB',
+=======
+      bandwidth: '120 GB',
+>>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
       cta: 'Start Starter',
       popular: false
     },
@@ -32,13 +40,18 @@ export default function PricingPlans() {
       icon: Monitor,
       color: 'from-orange-600 to-orange-700',
       storage: '150 GB',
+<<<<<<< HEAD
       bandwidth: '750 GB',
+=======
+      bandwidth: '600 GB',
+>>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
       cta: 'Start Personal',
       popular: true,
       badge: 'Most Popular'
     },
     {
       name: 'Pro I',
+<<<<<<< HEAD
       price: '₹299',
       period: 'per month',
       icon: Star,
@@ -69,6 +82,16 @@ export default function PricingPlans() {
       bandwidth: '40 TB',
       cta: 'Start Pro III',
       popular: false
+=======
+      price: '₹399',
+      period: 'per month',
+      icon: Star,
+      color: 'from-blue-600 to-blue-700',
+      storage: '500 GB',
+      bandwidth: '2 TB',
+      cta: 'Start Pro I',
+      popular: false
+>>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
     }
   ];
 
@@ -78,6 +101,7 @@ export default function PricingPlans() {
       items: [
         {
           name: 'Storage space',
+<<<<<<< HEAD
           values: ['2 GB', '30 GB', '150 GB', '400 GB', '2 TB', '8 TB']
         },
         {
@@ -95,6 +119,25 @@ export default function PricingPlans() {
         {
           name: 'Bulk operations',
           values: [false, false, false, true, true, true]
+=======
+          values: ['2 GB', '30 GB', '150 GB', '500 GB']
+        },
+        {
+          name: 'Download bandwidth',
+          values: ['4 GB', '120 GB', '600 GB', '2 TB']
+        },
+        {
+          name: 'File versioning',
+          values: [false, true, true, true]
+        },
+        {
+          name: 'Advanced file management',
+          values: [false, false, true, true]
+        },
+        {
+          name: 'Bulk operations',
+          values: [false, false, false, true]
+>>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
         }
       ]
     },
@@ -103,6 +146,7 @@ export default function PricingPlans() {
       items: [
         {
           name: 'Web dashboard',
+<<<<<<< HEAD
           values: ['Basic', 'Standard', 'Advanced', 'Advanced', 'Advanced', 'Advanced']
         },
         {
@@ -112,6 +156,17 @@ export default function PricingPlans() {
         {
           name: 'Password protection',
           values: [false, true, true, true, true, true]
+=======
+          values: ['Basic', 'Standard', 'Advanced', 'Advanced']
+        },
+        {
+          name: 'Share links',
+          values: [true, true, true, true]
+        },
+        {
+          name: 'Password protection',
+          values: [false, true, true, true]
+>>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
         }
       ]
     }
@@ -130,7 +185,11 @@ export default function PricingPlans() {
         </div>
 
         {/* Pricing Cards */}
+<<<<<<< HEAD
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-12">
+=======
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
+>>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
           {plans.map((plan, index) => {
             const IconComponent = plan.icon;
             return (

@@ -87,7 +87,11 @@ class ErrorHandler {
     // Network error recovery
     this.recoveryStrategies.set(ErrorType.NETWORK, {
       canRecover: (error) => error.type === ErrorType.NETWORK,
+<<<<<<< HEAD
       recover: async (_error) => {
+=======
+      recover: async (error) => {
+>>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
         // Retry with exponential backoff
         await this.delay(1000);
         return this.isOnline;
@@ -98,6 +102,7 @@ class ErrorHandler {
     });
 
     // API error recovery
+<<<<<<< HEAD
 interface ApiError extends AppError {
   statusCode: number;
 }
@@ -113,6 +118,15 @@ interface ResourceError extends AppError {
       },
       recover: async (error) => {
         const apiError = error as ApiError;
+=======
+    this.recoveryStrategies.set(ErrorType.API, {
+      canRecover: (error) => {
+        const apiError = error as any;
+        return apiError.statusCode >= 500 || apiError.statusCode === 429;
+      },
+      recover: async (error) => {
+        const apiError = error as any;
+>>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
         if (apiError.statusCode === 429) {
           await this.delay(5000); // Rate limit backoff
         } else {
@@ -126,7 +140,11 @@ interface ResourceError extends AppError {
     this.recoveryStrategies.set(ErrorType.RESOURCE_LOADING, {
       canRecover: (error) => error.type === ErrorType.RESOURCE_LOADING,
       recover: async (error) => {
+<<<<<<< HEAD
         const resourceError = error as ResourceError;
+=======
+        const resourceError = error as any;
+>>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
         // Try loading from CDN fallback
         return this.loadFallbackResource(resourceError.resourceUrl);
       },
@@ -294,7 +312,11 @@ interface ResourceError extends AppError {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
+<<<<<<< HEAD
   private async loadFallbackResource(_url: string): Promise<boolean> {
+=======
+  private async loadFallbackResource(url: string): Promise<boolean> {
+>>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
     // Implement fallback resource loading logic
     return false;
   }

@@ -51,12 +51,20 @@ class MonitoringService {
     try {
       // Dynamic import to avoid bundling if not needed
       const Sentry = await import('@sentry/browser');
+<<<<<<< HEAD
+=======
+      const { Integrations } = await import('@sentry/tracing');
+>>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
 
       Sentry.init({
         dsn: this.config.sentryDsn,
         environment: process.env.NODE_ENV,
         integrations: [
+<<<<<<< HEAD
           new Sentry.BrowserTracing(),
+=======
+          new Integrations.BrowserTracing(),
+>>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
         ],
         tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
         beforeSend: (event) => {
@@ -81,8 +89,12 @@ class MonitoringService {
 
   private async initializeLogRocket(): Promise<void> {
     try {
+<<<<<<< HEAD
       // Use dynamic require to avoid TypeScript module resolution issues
       const LogRocket = (await eval('import("logrocket")')) as any;
+=======
+      const LogRocket = await import('logrocket');
+>>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
       
       LogRocket.init(this.config.logRocketAppId!);
 
@@ -94,7 +106,11 @@ class MonitoringService {
 
       // Capture console logs
       if (this.config.enableConsoleCapture) {
+<<<<<<< HEAD
         LogRocket.getSessionURL((sessionURL: string) => {
+=======
+        LogRocket.getSessionURL((sessionURL) => {
+>>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
           console.log('LogRocket session:', sessionURL);
         });
       }
@@ -155,7 +171,11 @@ class MonitoringService {
 
   private async sendToLogRocket(error: AppError): Promise<void> {
     try {
+<<<<<<< HEAD
       const LogRocket = (await eval('import("logrocket")')) as any;
+=======
+      const LogRocket = await import('logrocket');
+>>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
       
       LogRocket.captureException(new Error(error.message), {
         tags: {
@@ -187,7 +207,11 @@ class MonitoringService {
     }
   }
 
+<<<<<<< HEAD
   private mapSeverityToSentryLevel(severity: string): 'fatal' | 'error' | 'warning' | 'info' {
+=======
+  private mapSeverityToSentryLevel(severity: string): any {
+>>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
     switch (severity) {
       case 'CRITICAL': return 'fatal';
       case 'HIGH': return 'error';
@@ -197,7 +221,11 @@ class MonitoringService {
     }
   }
 
+<<<<<<< HEAD
   public setUser(userId: string, userData?: Record<string, unknown>): void {
+=======
+  public setUser(userId: string, userData?: Record<string, any>): void {
+>>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
     if (!this.isInitialized) return;
 
     try {
@@ -210,10 +238,15 @@ class MonitoringService {
 
       // Set user in LogRocket
       if (this.config.logRocketAppId) {
+<<<<<<< HEAD
         eval('import("logrocket")').then((LogRocket: any) => {
           LogRocket.identify(userId, userData);
         }).catch((error: any) => {
           console.error('Failed to import LogRocket:', error);
+=======
+        import('logrocket').then(LogRocket => {
+          LogRocket.identify(userId, userData);
+>>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
         });
       }
 
@@ -222,7 +255,11 @@ class MonitoringService {
     }
   }
 
+<<<<<<< HEAD
   public addBreadcrumb(message: string, category: string, data?: Record<string, unknown>): void {
+=======
+  public addBreadcrumb(message: string, category: string, data?: Record<string, any>): void {
+>>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
     if (!this.isInitialized) return;
 
     try {

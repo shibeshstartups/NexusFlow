@@ -1,5 +1,10 @@
+<<<<<<< HEAD
 import { useState } from 'react';
 import { ArrowLeft, Briefcase, Users, Shield, BarChart3, Clock, CheckCircle, TrendingDown, Building, Globe, Zap, Database, Settings } from 'lucide-react';
+=======
+import React, { useState } from 'react';
+import { ArrowLeft, Briefcase, Users, Shield, BarChart3, Clock, CheckCircle, TrendingDown, Building, Globe, Zap, Database, Settings, Phone } from 'lucide-react';
+>>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
 
 export default function BusinessPlans() {
   const businessPlans = [
@@ -604,7 +609,13 @@ export default function BusinessPlans() {
               </div>
 
               <button className="w-full bg-gradient-to-r from-teal-600 to-teal-700 text-white py-3 px-4 rounded-lg font-semibold hover:from-teal-700 hover:to-teal-800 transition-all duration-300 shadow-lg hover:shadow-xl">
+<<<<<<< HEAD
                 Get Started with {recommendation.plan}
+=======
+                <a href="/dashboard" className="block">
+                  Get Started with {recommendation.plan}
+                </a>
+>>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
               </button>
 
               {/* Custom Pack Option */}

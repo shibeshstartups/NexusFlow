@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+<<<<<<< HEAD
 import { sentryVitePlugin } from '@sentry/vite-plugin';
 
 // https://vitejs.dev/config/
@@ -44,4 +45,13 @@ export default defineConfig({
     // Enable performance monitoring in production
     __ENABLE_PERFORMANCE_MONITORING__: process.env.NODE_ENV === 'production'
   }
+=======
+
+// https://vitejs.dev/config/
+export default defineConfig({
+  plugins: [react()],
+  optimizeDeps: {
+    exclude: ['lucide-react'],
+  },
+>>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
 });

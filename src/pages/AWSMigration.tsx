@@ -1,5 +1,10 @@
+<<<<<<< HEAD
 import { useState } from 'react';
 import { ArrowLeft, ArrowRight, CheckCircle, Database, Zap, Shield, DollarSign, Users, Code, Download, FileText, TrendingDown, Star } from 'lucide-react';
+=======
+import React, { useState } from 'react';
+import { ArrowLeft, ArrowRight, CheckCircle, AlertTriangle, Database, Zap, Shield, DollarSign, Clock, Users, Code, Download, Upload, Settings, FileText, TrendingDown, Star } from 'lucide-react';
+>>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
 
 export default function AWSMigration() {
   const [activeStep, setActiveStep] = useState(0);

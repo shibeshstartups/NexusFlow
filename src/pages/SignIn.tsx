@@ -36,7 +36,11 @@ export default function SignIn() {
       
       // Redirect to dashboard
       window.location.href = '/dashboard';
+<<<<<<< HEAD
     } catch {
+=======
+    } catch (err) {
+>>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
       setError('Invalid email or password. Please try again.');
     } finally {
       setIsLoading(false);
@@ -56,7 +60,11 @@ export default function SignIn() {
       
       // Redirect to dashboard
       window.location.href = '/dashboard';
+<<<<<<< HEAD
     } catch {
+=======
+    } catch (err) {
+>>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
       setError('Google sign-in failed. Please try again.');
     } finally {
       setIsLoading(false);

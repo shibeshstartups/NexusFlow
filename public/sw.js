@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 const CACHE_NAME = 'nexusflow-v2.0';
 const OFFLINE_URL = '/offline.html';
 const API_CACHE_NAME = 'nexusflow-api-v1';
@@ -25,14 +26,22 @@ const CACHE_STRATEGIES = {
 };
 
 // URLs to cache during install
+=======
+const CACHE_NAME = 'nexusflow-v1';
+const OFFLINE_URL = '/offline.html';
+>>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
 const urlsToCache = [
   '/',
   '/offline.html',
   '/static/js/bundle.js',
   '/static/css/main.css',
+<<<<<<< HEAD
   '/manifest.json',
   '/icons/icon-192x192.png',
   '/icons/icon-512x512.png'
+=======
+  '/manifest.json'
+>>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
 ];
 
 // Install event
@@ -50,6 +59,7 @@ self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
 
+<<<<<<< HEAD
 // Fetch event with advanced caching strategies
 self.addEventListener('fetch', (event) => {
   // Skip non-GET requests except for offline queue
@@ -57,10 +67,17 @@ self.addEventListener('fetch', (event) => {
     handleNonGetRequest(event);
     return;
   }
+=======
+// Fetch event
+self.addEventListener('fetch', (event) => {
+  // Skip non-GET requests
+  if (event.request.method !== 'GET') return;
+>>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
   
   // Skip chrome-extension and other non-http requests
   if (!event.request.url.startsWith('http')) return;
 
+<<<<<<< HEAD
   const url = new URL(event.request.url);
   
   // Apply different strategies based on request type
@@ -73,6 +90,41 @@ self.addEventListener('fetch', (event) => {
   } else {
     event.respondWith(handleNavigationRequest(event.request));
   }
+=======
+  event.respondWith(
+    caches.match(event.request).then((cachedResponse) => {
+      if (cachedResponse) {
+        return cachedResponse;
+      }
+
+      return fetch(event.request).then((response) => {
+        // Don't cache non-successful responses
+        if (!response || response.status !== 200 || response.type !== 'basic') {
+          return response;
+        }
+
+        // Clone the response for caching
+        const responseToCache = response.clone();
+        caches.open(CACHE_NAME).then((cache) => {
+          cache.put(event.request, responseToCache);
+        });
+
+        return response;
+      }).catch(() => {
+        // Return offline page for navigation requests
+        if (event.request.mode === 'navigate') {
+          return caches.match(OFFLINE_URL);
+        }
+        
+        // Return a generic offline response for other requests
+        return new Response('Offline', {
+          status: 503,
+          statusText: 'Service Unavailable'
+        });
+      });
+    })
+  );
+>>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
 });
 
 // Activate event
@@ -91,6 +143,7 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
+<<<<<<< HEAD
 // Enhanced background sync with retry logic
 self.addEventListener('sync', (event) => {
   console.log('Background sync triggered:', event.tag);
@@ -144,10 +197,34 @@ self.addEventListener('push', (event) => {
     
     event.waitUntil(
       self.registration.showNotification(data.title, options)
+=======
+// Background sync for failed requests
+self.addEventListener('sync', (event) => {
+  if (event.tag === 'background-sync') {
+    event.waitUntil(
+      // Retry failed requests from IndexedDB
+      retryFailedRequests()
     );
   }
 });
 
+// Push notification handling
+self.addEventListener('push', (event) => {
+  if (event.data) {
+    const data = event.data.json();
+    event.waitUntil(
+      self.registration.showNotification(data.title, {
+        body: data.body,
+        icon: '/icons/icon-192x192.png',
+        badge: '/icons/icon-72x72.png',
+        data: data.url
+      })
+>>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
+    );
+  }
+});
+
+<<<<<<< HEAD
 // Enhanced notification click handling
 self.addEventListener('notificationclick', (event) => {
   console.log('Notification clicked:', event.action, event.notification.data);
@@ -508,4 +585,21 @@ async function notifyClients(message) {
   clients.forEach(client => {
     client.postMessage(message);
   });
+=======
+// Notification click handling
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  
+  if (event.notification.data) {
+    event.waitUntil(
+      clients.openWindow(event.notification.data)
+    );
+  }
+});
+
+async function retryFailedRequests() {
+  // Implementation for retrying failed requests
+  // This would typically involve reading from IndexedDB
+  console.log('Retrying failed requests...');
+>>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
 }

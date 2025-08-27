@@ -3,7 +3,11 @@ interface LogEntry {
   level: 'debug' | 'info' | 'warn' | 'error';
   message: string;
   timestamp: string;
+<<<<<<< HEAD
   context?: Record<string, unknown>;
+=======
+  context?: Record<string, any>;
+>>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
   userId?: string;
   sessionId?: string;
   url?: string;
@@ -49,7 +53,11 @@ class Logger {
   private createLogEntry(
     level: LogEntry['level'],
     message: string,
+<<<<<<< HEAD
     context?: Record<string, unknown>
+=======
+    context?: Record<string, any>
+>>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
   ): LogEntry {
     return {
       level,
@@ -63,7 +71,11 @@ class Logger {
     };
   }
 
+<<<<<<< HEAD
   public debug(message: string, context?: Record<string, unknown>): void {
+=======
+  public debug(message: string, context?: Record<string, any>): void {
+>>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
     const entry = this.createLogEntry('debug', message, context);
     this.addToQueue(entry);
     
@@ -72,19 +84,31 @@ class Logger {
     }
   }
 
+<<<<<<< HEAD
   public info(message: string, context?: Record<string, unknown>): void {
+=======
+  public info(message: string, context?: Record<string, any>): void {
+>>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
     const entry = this.createLogEntry('info', message, context);
     this.addToQueue(entry);
     console.info(`[INFO] ${message}`, context);
   }
 
+<<<<<<< HEAD
   public warn(message: string, context?: Record<string, unknown>): void {
+=======
+  public warn(message: string, context?: Record<string, any>): void {
+>>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
     const entry = this.createLogEntry('warn', message, context);
     this.addToQueue(entry);
     console.warn(`[WARN] ${message}`, context);
   }
 
+<<<<<<< HEAD
   public error(message: string, context?: Record<string, unknown>): void {
+=======
+  public error(message: string, context?: Record<string, any>): void {
+>>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
     const entry = this.createLogEntry('error', message, context);
     this.addToQueue(entry);
     console.error(`[ERROR] ${message}`, context);

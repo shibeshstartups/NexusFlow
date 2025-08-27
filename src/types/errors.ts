@@ -6,7 +6,11 @@ export interface AppError {
   message: string;
   userMessage: string;
   timestamp: Date;
+<<<<<<< HEAD
   context?: Record<string, unknown>;
+=======
+  context?: Record<string, any>;
+>>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
   stack?: string;
   userId?: string;
   sessionId?: string;
@@ -44,7 +48,11 @@ export interface APIError extends AppError {
   statusCode: number;
   endpoint: string;
   method: string;
+<<<<<<< HEAD
   responseBody?: unknown;
+=======
+  responseBody?: any;
+>>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
 }
 
 export interface ValidationError extends AppError {

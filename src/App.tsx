@@ -1,9 +1,15 @@
+<<<<<<< HEAD
 import React, { lazy, Suspense, useEffect } from 'react';
 import { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import * as Sentry from '@sentry/react';
 import webVitalsService from './services/webVitalsService';
 import { usePerformanceMonitoring } from './hooks/usePerformanceMonitoring';
+=======
+import React from 'react';
+import { useState } from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+>>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
 import ErrorBoundary from './components/ErrorBoundary';
 import ErrorNotificationContainer from './components/ErrorNotificationContainer';
 import OfflineIndicator from './components/OfflineIndicator';
@@ -17,6 +23,7 @@ import PricingCalculator from './components/PricingCalculator';
 import Footer from './components/Footer';
 import PWAInstallPrompt from './components/PWAInstallPrompt';
 import FAQ from './components/FAQ';
+<<<<<<< HEAD
 
 // Lazy load heavy page components for better performance
 const DeveloperPlans = lazy(() => import('./pages/DeveloperPlans'));
@@ -105,6 +112,22 @@ function App() {
       stopTracking();
     };
   }, [trackComponentMount]);
+=======
+import DeveloperPlans from './pages/DeveloperPlans';
+import BusinessPlans from './pages/BusinessPlans';
+import AWSMigration from './pages/AWSMigration';
+import Documentation from './pages/Documentation';
+import HelpCenter from './pages/HelpCenter';
+import Security from './pages/Security';
+import Status from './pages/Status';
+import VulnerabilityRewardProgramme from './pages/VulnerabilityRewardProgramme';
+import ObjectStorage from './pages/ObjectStorage';
+import SignIn from './pages/SignIn';
+import Dashboard from './pages/Dashboard';
+
+function App() {
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+>>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
 
   const HomePage = () => (
     <>
@@ -127,6 +150,7 @@ function App() {
           
           <Routes>
             <Route path="/" element={<HomePage />} />
+<<<<<<< HEAD
             <Route path="/developer-plans" element={
               <LazyPageWrapper><DeveloperPlans /></LazyPageWrapper>
             } />
@@ -163,6 +187,19 @@ function App() {
             <Route path="/analytics" element={
               <LazyPageWrapper><AnalyticsDashboard /></LazyPageWrapper>
             } />
+=======
+            <Route path="/developer-plans" element={<DeveloperPlans />} />
+            <Route path="/business-plans" element={<BusinessPlans />} />
+            <Route path="/aws-migration" element={<AWSMigration />} />
+            <Route path="/documentation" element={<Documentation />} />
+            <Route path="/help-center" element={<HelpCenter />} />
+            <Route path="/security" element={<Security />} />
+            <Route path="/status" element={<Status />} />
+            <Route path="/vulnerability-reward-programme" element={<VulnerabilityRewardProgramme />} />
+            <Route path="/object-storage" element={<ObjectStorage />} />
+            <Route path="/sign-in" element={<SignIn />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+>>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
           </Routes>
           
           <Footer />
