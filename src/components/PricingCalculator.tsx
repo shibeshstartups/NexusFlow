@@ -14,12 +14,8 @@ export default function PricingCalculator() {
   const calculateCustomCost = () => {
     const storageCost = storageGB * STORAGE_COST_PER_GB;
     const downloadCost = downloadGB * DOWNLOAD_COST_PER_GB;
-<<<<<<< HEAD
-    return storageCost + downloadCost;
-=======
     const teamCost = Math.max(0, teamSize - 1) * 50; // ₹50 per additional seat (first seat free)
     return storageCost + downloadCost + teamCost;
->>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
   };
 
   const calculateRecommendation = () => {
@@ -30,22 +26,11 @@ export default function PricingCalculator() {
       { name: 'Free Plan', price: 0, storage: 2, download: 10, cost: 0 },
       { name: 'Starter', price: 50, storage: 30, download: 150, cost: 50 },
       { name: 'Personal', price: 150, storage: 150, download: 750, cost: 150 },
-<<<<<<< HEAD
-      { name: 'Pro I', price: 299, storage: 400, download: 2000, cost: 299 },
-      { name: 'Pro II', price: 649, storage: 2000, download: 10000, cost: 649 },
-      { name: 'Pro III', price: 1299, storage: 8000, download: 40000, cost: 1299 }
-=======
-      { name: 'Pro I', price: 399, storage: 500, download: 2000, cost: 399 }
->>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
+      { name: 'Pro', price: 299, storage: 400, download: 2000, cost: 299 }
     ];
 
     // Find the best plan that covers the requirements
     let recommendedPlan = plans[plans.length - 1]; // Default to highest plan
-<<<<<<< HEAD
-    const bestValue = null;
-=======
-    let bestValue = null;
->>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
 
     for (const plan of plans) {
       if (plan.storage >= storageGB && plan.download >= downloadGB) {
@@ -204,11 +189,7 @@ export default function PricingCalculator() {
                 <div className="flex items-center mb-1.5">
                   <Users className="w-4 h-4 text-purple-600 mr-2" />
                   <label className="block text-sm font-medium text-gray-700">
-<<<<<<< HEAD
-                    How many people on your team?
-=======
                     Team Size (₹50 per additional seat)
->>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
                   </label>
                 </div>
                 <select
@@ -216,14 +197,6 @@ export default function PricingCalculator() {
                   onChange={(e) => setTeamSize(parseInt(e.target.value))}
                   className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm"
                 >
-<<<<<<< HEAD
-                  <option value={1}>Just me</option>
-                  <option value={2}>2-3 people</option>
-                  <option value={5}>4-5 people</option>
-                  <option value={10}>6-10 people</option>
-                  <option value={25}>11-25 people</option>
-                  <option value={50}>26+ people</option>
-=======
                   <option value={1}>Just me (Free)</option>
                   <option value={2}>2 people (+₹50/month)</option>
                   <option value={3}>3 people (+₹100/month)</option>
@@ -232,7 +205,6 @@ export default function PricingCalculator() {
                   <option value={10}>10 people (+₹450/month)</option>
                   <option value={15}>15 people (+₹700/month)</option>
                   <option value={25}>25 people (+₹1,200/month)</option>
->>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
                 </select>
               </div>
 
@@ -269,13 +241,10 @@ export default function PricingCalculator() {
                     <span className="text-gray-600">Download ({downloadGB} GB × ₹0.20):</span>
                     <span className="font-medium text-xs">₹{Math.round(downloadGB * DOWNLOAD_COST_PER_GB)}</span>
                   </div>
-<<<<<<< HEAD
-=======
                   <div className="flex justify-between">
                     <span className="text-gray-600">Team ({Math.max(0, teamSize - 1)} seats × ₹50):</span>
                     <span className="font-medium text-xs">₹{Math.max(0, teamSize - 1) * 50}</span>
                   </div>
->>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
                   <div className="border-t pt-1.5 flex justify-between font-bold">
                     <span>Total Custom Cost:</span>
                     <span className="text-orange-600 text-xs">₹{recommendation.customCost}/month</span>

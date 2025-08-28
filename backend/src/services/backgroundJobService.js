@@ -10,6 +10,10 @@ export const JobType = {
   FILE_OPTIMIZATION: 'file_optimization',
   FILE_VIRUS_SCAN: 'file_virus_scan',
   FILE_METADATA_EXTRACTION: 'file_metadata_extraction',
+  // Large ZIP processing jobs
+  BULK_ZIP_CREATION: 'bulk_zip_creation',
+  FOLDER_ZIP_CREATION: 'folder_zip_creation',
+  PROJECT_ZIP_CREATION: 'project_zip_creation',
   
   // Analytics jobs
   ANALYTICS_AGGREGATION: 'analytics_aggregation',
@@ -149,6 +153,11 @@ class BackgroundJobService {
     this.registerProcessor('file-processing', JobType.FILE_OPTIMIZATION, this.processFileOptimization.bind(this));
     this.registerProcessor('file-processing', JobType.FILE_VIRUS_SCAN, this.processVirusScan.bind(this));
     this.registerProcessor('file-processing', JobType.FILE_METADATA_EXTRACTION, this.processMetadataExtraction.bind(this));
+    
+    // ZIP creation processors
+    this.registerProcessor('file-processing', JobType.BULK_ZIP_CREATION, this.processBulkZipCreation.bind(this));
+    this.registerProcessor('file-processing', JobType.FOLDER_ZIP_CREATION, this.processFolderZipCreation.bind(this));
+    this.registerProcessor('file-processing', JobType.PROJECT_ZIP_CREATION, this.processProjectZipCreation.bind(this));
 
     // Analytics processors
     this.registerProcessor('analytics', JobType.ANALYTICS_AGGREGATION, this.processAnalyticsAggregation.bind(this));
@@ -294,7 +303,7 @@ class BackgroundJobService {
    * Get queue name for job type
    */
   getQueueNameForJobType(jobType) {
-    if ([JobType.THUMBNAIL_GENERATION, JobType.FILE_OPTIMIZATION, JobType.FILE_VIRUS_SCAN, JobType.FILE_METADATA_EXTRACTION].includes(jobType)) {
+    if ([JobType.THUMBNAIL_GENERATION, JobType.FILE_OPTIMIZATION, JobType.FILE_VIRUS_SCAN, JobType.FILE_METADATA_EXTRACTION, JobType.BULK_ZIP_CREATION, JobType.FOLDER_ZIP_CREATION, JobType.PROJECT_ZIP_CREATION].includes(jobType)) {
       return 'file-processing';
     }
     
@@ -667,6 +676,203 @@ class BackgroundJobService {
     await redisService.set('system:performance', metrics, 600);
     
     return metrics;
+  }
+
+  /**
+   * Process bulk ZIP creation for selected files
+   */
+  async processBulkZipCreation(job) {
+    const { fileIds, userId, downloadId, options = {} } = job.data.payload;
+    
+    job.progress(10);
+    
+    try {
+      // Import the bulk download service
+      const bulkDownloadService = (await import('./bulkDownloadService.js')).default;
+      
+      job.progress(20);
+      
+      // Create ZIP stream for the files
+      const zipResult = await bulkDownloadService.createFilesZipStream(fileIds, userId, {
+        ...options,
+        downloadId,
+        onProgress: (progress) => {
+          // Update job progress based on ZIP creation progress
+          const overallProgress = 20 + (progress.percentage * 0.7); // 20% + 70% for ZIP creation
+          job.progress(Math.min(overallProgress, 90));
+        }
+      });
+      
+      job.progress(95);
+      
+      // Store the result in Redis for later retrieval
+      await redisService.set(
+        `bulk_download:${downloadId}`,
+        {
+          status: 'completed',
+          filename: zipResult.filename,
+          totalFiles: zipResult.totalFiles,
+          estimatedSize: zipResult.estimatedSize,
+          metadata: zipResult.metadata,
+          completedAt: new Date()
+        },
+        3600 // 1 hour TTL
+      );
+      
+      job.progress(100);
+      
+      return {
+        success: true,
+        downloadId,
+        filename: zipResult.filename,
+        totalFiles: zipResult.totalFiles,
+        estimatedSize: zipResult.estimatedSize
+      };
+      
+    } catch (error) {
+      logger.error('Bulk ZIP creation failed:', error);
+      
+      // Store error status in Redis
+      await redisService.set(
+        `bulk_download:${downloadId}`,
+        {
+          status: 'failed',
+          error: error.message,
+          failedAt: new Date()
+        },
+        3600
+      );
+      
+      throw error;
+    }
+  }
+  
+  /**
+   * Process folder ZIP creation
+   */
+  async processFolderZipCreation(job) {
+    const { folderId, userId, downloadId, options = {} } = job.data.payload;
+    
+    job.progress(10);
+    
+    try {
+      const bulkDownloadService = (await import('./bulkDownloadService.js')).default;
+      
+      job.progress(20);
+      
+      const zipResult = await bulkDownloadService.createFolderZipStream(folderId, userId, {
+        ...options,
+        downloadId,
+        onProgress: (progress) => {
+          const overallProgress = 20 + (progress.percentage * 0.7);
+          job.progress(Math.min(overallProgress, 90));
+        }
+      });
+      
+      job.progress(95);
+      
+      await redisService.set(
+        `bulk_download:${downloadId}`,
+        {
+          status: 'completed',
+          filename: zipResult.filename,
+          totalFiles: zipResult.totalFiles,
+          estimatedSize: zipResult.estimatedSize,
+          metadata: zipResult.metadata,
+          completedAt: new Date()
+        },
+        3600
+      );
+      
+      job.progress(100);
+      
+      return {
+        success: true,
+        downloadId,
+        filename: zipResult.filename,
+        totalFiles: zipResult.totalFiles,
+        estimatedSize: zipResult.estimatedSize
+      };
+      
+    } catch (error) {
+      logger.error('Folder ZIP creation failed:', error);
+      
+      await redisService.set(
+        `bulk_download:${downloadId}`,
+        {
+          status: 'failed',
+          error: error.message,
+          failedAt: new Date()
+        },
+        3600
+      );
+      
+      throw error;
+    }
+  }
+  
+  /**
+   * Process project ZIP creation
+   */
+  async processProjectZipCreation(job) {
+    const { projectId, userId, downloadId, options = {} } = job.data.payload;
+    
+    job.progress(10);
+    
+    try {
+      const bulkDownloadService = (await import('./bulkDownloadService.js')).default;
+      
+      job.progress(20);
+      
+      const zipResult = await bulkDownloadService.createProjectZipStream(projectId, userId, {
+        ...options,
+        downloadId,
+        onProgress: (progress) => {
+          const overallProgress = 20 + (progress.percentage * 0.7);
+          job.progress(Math.min(overallProgress, 90));
+        }
+      });
+      
+      job.progress(95);
+      
+      await redisService.set(
+        `bulk_download:${downloadId}`,
+        {
+          status: 'completed',
+          filename: zipResult.filename,
+          totalFiles: zipResult.totalFiles,
+          estimatedSize: zipResult.estimatedSize,
+          metadata: zipResult.metadata,
+          completedAt: new Date()
+        },
+        3600
+      );
+      
+      job.progress(100);
+      
+      return {
+        success: true,
+        downloadId,
+        filename: zipResult.filename,
+        totalFiles: zipResult.totalFiles,
+        estimatedSize: zipResult.estimatedSize
+      };
+      
+    } catch (error) {
+      logger.error('Project ZIP creation failed:', error);
+      
+      await redisService.set(
+        `bulk_download:${downloadId}`,
+        {
+          status: 'failed',
+          error: error.message,
+          failedAt: new Date()
+        },
+        3600
+      );
+      
+      throw error;
+    }
   }
 
   /**

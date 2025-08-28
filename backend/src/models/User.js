@@ -18,9 +18,17 @@ const userSchema = new mongoose.Schema({
   },
   password: {
     type: String,
-    required: [true, 'Password is required'],
+    required: function() {
+      // Password is required only if user is not using OAuth (no googleId)
+      return !this.googleId;
+    },
     minlength: [6, 'Password must be at least 6 characters'],
     select: false // Don't include password in queries by default
+  },
+  googleId: {
+    type: String,
+    unique: true,
+    sparse: true // Allows null/undefined values while maintaining uniqueness for non-null values
   },
   avatar: {
     type: String,
@@ -33,7 +41,11 @@ const userSchema = new mongoose.Schema({
   },
   plan: {
     type: String,
-    enum: ['free', 'creative_pro', 'business', 'enterprise'],
+    enum: [
+      'free', 'starter', 'personal', 'pro',
+      'developer_starter', 'developer_basic', 'developer_pro',
+      'business_starter', 'business_pro', 'business_advanced', 'enterprise'
+    ],
     default: 'free'
   },
   storageQuota: {
@@ -88,15 +100,52 @@ const userSchema = new mongoose.Schema({
     }
   },
   subscription: {
+    // Razorpay integration
+    razorpayCustomerId: String,
+    razorpaySubscriptionId: String,
+    
+    // Legacy Stripe support (for migration)
     stripeCustomerId: String,
     stripeSubscriptionId: String,
+    
+    // Subscription details
     status: {
       type: String,
-      enum: ['active', 'inactive', 'cancelled', 'past_due'],
+      enum: ['active', 'inactive', 'cancelled', 'past_due', 'trialing'],
       default: 'inactive'
     },
+    planId: {
+      type: String,
+      enum: [
+        'free', 'starter', 'personal', 'pro',
+        'developer_starter', 'developer_basic', 'developer_pro',
+        'business_starter', 'business_pro', 'business_advanced', 'enterprise'
+      ],
+      default: 'free'
+    },
+    subscriptionPeriod: {
+      type: String,
+      enum: ['monthly', 'yearly'],
+      default: 'monthly'
+    },
     currentPeriodStart: Date,
-    currentPeriodEnd: Date
+    currentPeriodEnd: Date,
+    
+    // Payment tracking
+    lastPaymentDate: Date,
+    nextBillingDate: Date,
+    autoRenewal: {
+      type: Boolean,
+      default: true
+    },
+    
+    // Trial information
+    trialStart: Date,
+    trialEnd: Date,
+    isTrialUsed: {
+      type: Boolean,
+      default: false
+    }
   }
 }, {
   timestamps: true,
@@ -139,21 +188,54 @@ userSchema.pre('save', function(next) {
   if (this.isModified('plan')) {
     switch (this.plan) {
       case 'free':
-        this.storageQuota = 5368709120; // 5GB
-        this.transferQuota = 53687091200; // 50GB
+        this.storageQuota = 2 * 1024 * 1024 * 1024; // 2GB
+        this.transferQuota = 4 * 1024 * 1024 * 1024; // 4GB
         break;
-      case 'creative_pro':
-        this.storageQuota = 107374182400; // 100GB
-        this.transferQuota = 1073741824000; // 1TB
+      case 'starter':
+        this.storageQuota = 30 * 1024 * 1024 * 1024; // 30GB
+        this.transferQuota = 120 * 1024 * 1024 * 1024; // 120GB
         break;
-      case 'business':
-        this.storageQuota = 1073741824000; // 1TB
-        this.transferQuota = 10737418240000; // 10TB
+      case 'personal':
+        this.storageQuota = 150 * 1024 * 1024 * 1024; // 150GB
+        this.transferQuota = 600 * 1024 * 1024 * 1024; // 600GB
+        break;
+      case 'pro':
+        this.storageQuota = 500 * 1024 * 1024 * 1024; // 500GB
+        this.transferQuota = 2 * 1024 * 1024 * 1024 * 1024; // 2TB
+        break;
+      case 'developer_starter':
+        this.storageQuota = 500 * 1024 * 1024 * 1024; // 500GB
+        this.transferQuota = 2.5 * 1024 * 1024 * 1024 * 1024; // 2.5TB
+        break;
+      case 'developer_basic':
+        this.storageQuota = 1024 * 1024 * 1024 * 1024; // 1TB
+        this.transferQuota = 5 * 1024 * 1024 * 1024 * 1024; // 5TB
+        break;
+      case 'developer_pro':
+        this.storageQuota = 2 * 1024 * 1024 * 1024 * 1024; // 2TB
+        this.transferQuota = 10 * 1024 * 1024 * 1024 * 1024; // 10TB
+        break;
+      case 'business_starter':
+        this.storageQuota = 1024 * 1024 * 1024 * 1024; // 1TB
+        this.transferQuota = 5 * 1024 * 1024 * 1024 * 1024; // 5TB
+        break;
+      case 'business_pro':
+        this.storageQuota = 5 * 1024 * 1024 * 1024 * 1024; // 5TB
+        this.transferQuota = 25 * 1024 * 1024 * 1024 * 1024; // 25TB
+        break;
+      case 'business_advanced':
+        this.storageQuota = 15 * 1024 * 1024 * 1024 * 1024; // 15TB
+        this.transferQuota = 75 * 1024 * 1024 * 1024 * 1024; // 75TB
         break;
       case 'enterprise':
-        this.storageQuota = 10737418240000; // 10TB
-        this.transferQuota = 107374182400000; // 100TB
+        this.storageQuota = 50 * 1024 * 1024 * 1024 * 1024; // 50TB
+        this.transferQuota = 250 * 1024 * 1024 * 1024 * 1024; // 250TB
         break;
+    }
+    
+    // Update subscription plan ID when plan changes
+    if (this.subscription) {
+      this.subscription.planId = this.plan;
     }
   }
   next();
@@ -184,6 +266,79 @@ userSchema.methods.updateStorageUsage = async function(sizeChange) {
 userSchema.methods.updateTransferUsage = async function(transferAmount) {
   this.transferUsed += transferAmount;
   return this.save();
+};
+
+// Check if subscription is active
+userSchema.methods.hasActiveSubscription = function() {
+  return this.subscription.status === 'active' && 
+         this.subscription.currentPeriodEnd && 
+         new Date() < this.subscription.currentPeriodEnd;
+};
+
+// Check if user is on trial
+userSchema.methods.isOnTrial = function() {
+  return this.subscription.status === 'trialing' &&
+         this.subscription.trialEnd &&
+         new Date() < this.subscription.trialEnd;
+};
+
+// Get subscription days remaining
+userSchema.methods.getSubscriptionDaysRemaining = function() {
+  if (!this.subscription.currentPeriodEnd) return 0;
+  
+  const now = new Date();
+  const endDate = new Date(this.subscription.currentPeriodEnd);
+  const diffTime = endDate - now;
+  
+  return Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+};
+
+// Upgrade to new plan
+userSchema.methods.upgradePlan = async function(newPlan, subscriptionDetails = {}) {
+  const oldPlan = this.plan;
+  
+  this.plan = newPlan;
+  
+  // Update subscription details
+  Object.assign(this.subscription, {
+    planId: newPlan,
+    status: 'active',
+    ...subscriptionDetails
+  });
+  
+  await this.save();
+  
+  return {
+    oldPlan,
+    newPlan,
+    subscriptionDetails: this.subscription
+  };
+};
+
+// Cancel subscription (keep access until period end)
+userSchema.methods.cancelSubscription = async function() {
+  this.subscription.status = 'cancelled';
+  this.subscription.autoRenewal = false;
+  
+  await this.save();
+  
+  return this.subscription;
+};
+
+// Reactivate subscription
+userSchema.methods.reactivateSubscription = async function() {
+  if (this.subscription.status === 'cancelled' && 
+      this.subscription.currentPeriodEnd && 
+      new Date() < this.subscription.currentPeriodEnd) {
+    
+    this.subscription.status = 'active';
+    this.subscription.autoRenewal = true;
+    
+    await this.save();
+    return true;
+  }
+  
+  return false;
 };
 
 const User = mongoose.model('User', userSchema);

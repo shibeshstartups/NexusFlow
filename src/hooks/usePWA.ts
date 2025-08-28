@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import { useState, useEffect, useCallback } from 'react';
 
 // Extend ServiceWorkerRegistration interface to include sync
@@ -13,6 +12,11 @@ declare global {
     beforeinstallprompt: BeforeInstallPromptEvent;
     appinstalled: Event;
   }
+}
+
+interface BeforeInstallPromptEvent extends Event {
+  prompt(): Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
 }
 
 interface PWAState {
@@ -51,16 +55,7 @@ interface OfflineAction {
   data: Record<string, unknown>;
   timestamp: number;
 }
-=======
-import { useState, useEffect } from 'react';
->>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
 
-interface BeforeInstallPromptEvent extends Event {
-  prompt(): Promise<void>;
-  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
-}
-
-<<<<<<< HEAD
 interface SyncQueueItem {
   id: string;
   type: 'upload' | 'api' | 'analytics';
@@ -68,6 +63,10 @@ interface SyncQueueItem {
   data: SyncData;
   timestamp: number;
   retries: number;
+}
+
+interface NavigatorWithStandalone extends Navigator {
+  standalone?: boolean;
 }
 
 export const usePWA = () => {
@@ -93,10 +92,6 @@ export const usePWA = () => {
     checkNotificationPermission();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-interface NavigatorWithStandalone extends Navigator {
-  standalone?: boolean;
-}
 
   const initializePWA = async () => {
     // Check if PWA is already installed
@@ -497,59 +492,3 @@ interface NavigatorWithStandalone extends Navigator {
 };
 
 export default usePWA;
-=======
-export function usePWA() {
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const [isInstallable, setIsInstallable] = useState(false);
-  const [isInstalled, setIsInstalled] = useState(false);
-
-  useEffect(() => {
-    // Check if app is already installed
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-      setIsInstalled(true);
-      return;
-    }
-
-    const handleBeforeInstallPrompt = (e: Event) => {
-      e.preventDefault();
-      setDeferredPrompt(e as BeforeInstallPromptEvent);
-      setIsInstallable(true);
-    };
-
-    const handleAppInstalled = () => {
-      setIsInstalled(true);
-      setIsInstallable(false);
-      setDeferredPrompt(null);
-    };
-
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    window.addEventListener('appinstalled', handleAppInstalled);
-
-    return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-      window.removeEventListener('appinstalled', handleAppInstalled);
-    };
-  }, []);
-
-  const installApp = async () => {
-    if (!deferredPrompt) return false;
-
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    
-    if (outcome === 'accepted') {
-      setDeferredPrompt(null);
-      setIsInstallable(false);
-      return true;
-    }
-    
-    return false;
-  };
-
-  return {
-    isInstallable,
-    isInstalled,
-    installApp
-  };
-}
->>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc

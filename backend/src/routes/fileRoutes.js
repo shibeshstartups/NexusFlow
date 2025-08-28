@@ -1,16 +1,25 @@
 import express from 'express';
 import {
   uploadFiles,
+  uploadFolder,
   getFiles,
   getFile,
   deleteFile,
   downloadFile,
+  downloadFolderAsZip,
+  downloadFilesAsZip,
+  downloadProjectAsZip,
+  getBulkDownloadStatus,
   shareFile,
   getUserStorageStats,
   getCdnAnalytics,
   getResponsiveImages,
   purgeCdnCache,
-  setupCdnOptimization
+  setupCdnOptimization,
+  verifyFolderIntegrity,
+  getVerificationStatus,
+  batchVerifyFolders,
+  getFolderHealthSummary
 } from '../controllers/r2FileController.js';
 import { protect, checkStorageQuota, checkTransferQuota } from '../middleware/authMiddleware.js';
 import { uploadMultiple } from '../config/r2Upload.js';
@@ -45,6 +54,19 @@ router.route('/')
     uploadFiles
   );
 
+// Folder upload with structure preservation
+router.post('/upload-folder',
+  checkStorageQuota(),
+  invalidateCache([
+    'files:*:*',
+    'folders:*:*', 
+    'projects:*:*',
+    'analytics:*:*'
+  ]),
+  uploadMultiple('files'),
+  uploadFolder
+);
+
 // Individual file operations
 router.route('/:id')
   .get(
@@ -66,6 +88,26 @@ router.get('/:id/download',
   checkTransferQuota(),
   fileCacheMiddleware,
   downloadFile
+);
+
+// Bulk download endpoints
+router.post('/download/bulk',
+  checkTransferQuota(),
+  downloadFilesAsZip
+);
+
+router.get('/download/folder/:folderId',
+  checkTransferQuota(),
+  downloadFolderAsZip
+);
+
+router.post('/download/project/:projectId',
+  checkTransferQuota(),
+  downloadProjectAsZip
+);
+
+router.get('/download/status/:downloadId',
+  getBulkDownloadStatus
 );
 
 // File sharing
@@ -108,6 +150,23 @@ router.post('/cdn/optimize',
 router.get('/:id/responsive', 
   cdnCacheMiddleware,
   getResponsiveImages
+);
+
+// Folder integrity verification routes
+router.post('/verify/folder/:folderId',
+  verifyFolderIntegrity
+);
+
+router.get('/verify/status/:verificationId',
+  getVerificationStatus
+);
+
+router.post('/verify/batch',
+  batchVerifyFolders
+);
+
+router.get('/health/summary/:projectId?',
+  getFolderHealthSummary
 );
 
 export default router;

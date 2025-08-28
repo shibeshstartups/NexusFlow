@@ -25,6 +25,7 @@ import projectRoutes from './routes/projectRoutes.js';
 import fileRoutes from './routes/fileRoutes.js';
 import folderRoutes from './routes/folderRoutes.js';
 import shareRoutes from './routes/shareRoutes.js';
+import paymentRoutes from './routes/paymentRoutes.js';
 import analyticsController from './controllers/analyticsController.js';
 
 dotenv.config();
@@ -140,6 +141,7 @@ app.use('/api/projects', projectRoutes);
 app.use('/api/files', uploadLimiter, fileRoutes);
 app.use('/api/folders', folderRoutes);
 app.use('/api/share', shareRoutes);
+app.use('/api/payments', paymentRoutes);
 app.use('/api/analytics', analyticsController);
 
 // Prometheus metrics endpoint

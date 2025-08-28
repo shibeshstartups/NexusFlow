@@ -2,6 +2,7 @@ import express from 'express';
 import { 
   register, 
   login, 
+  googleLogin,
   logout, 
   forgotPassword, 
   resetPassword, 
@@ -18,6 +19,7 @@ const router = express.Router();
 // Public routes
 router.post('/register', userValidation.register, register);
 router.post('/login', userValidation.login, login);
+router.post('/google', googleLogin); // Google OAuth login
 router.post('/forgot-password', userValidation.forgotPassword, forgotPassword);
 router.patch('/reset-password', userValidation.resetPassword, resetPassword);
 router.get('/verify-email/:token', verifyEmail);

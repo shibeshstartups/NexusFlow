@@ -1,7 +1,22 @@
-import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Zap, Shield, Gauge } from 'lucide-react';
 
 export default function Hero() {
+  const navigate = useNavigate();
+
+  const handleStartFree = () => {
+    navigate('/sign-in?plan=free');
+  };
+
+  const handleViewPricing = () => {
+    // Scroll to pricing section if on home page, otherwise navigate
+    const pricingSection = document.getElementById('pricing');
+    if (pricingSection) {
+      pricingSection.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      navigate('/#pricing');
+    }
+  };
   return (
     <section className="pt-24 pb-12 bg-gradient-to-br from-blue-50 via-white to-teal-50">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -25,11 +40,17 @@ export default function Hero() {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-3 justify-center mb-8">
-            <button className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3 rounded-lg font-semibold hover:from-blue-700 hover:to-blue-800 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center justify-center">
+            <button 
+              onClick={handleStartFree}
+              className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3 rounded-lg font-semibold hover:from-blue-700 hover:to-blue-800 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center justify-center"
+            >
               Start Free (2GB)
               <ArrowRight className="w-4 h-4 ml-2" />
             </button>
-            <button className="border-2 border-gray-300 text-gray-700 px-6 py-3 rounded-lg font-semibold hover:border-blue-600 hover:text-blue-600 transition-all duration-300">
+            <button 
+              onClick={handleViewPricing}
+              className="border-2 border-gray-300 text-gray-700 px-6 py-3 rounded-lg font-semibold hover:border-blue-600 hover:text-blue-600 transition-all duration-300"
+            >
               View Pricing
             </button>
           </div>

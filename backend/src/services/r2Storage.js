@@ -781,6 +781,31 @@ class R2StorageService {
   }
 
   /**
+   * Download file as stream from R2 (for ZIP creation)
+   */
+  async downloadFileStream(key) {
+    try {
+      const command = new GetObjectCommand({
+        Bucket: this.bucket,
+        Key: key
+      });
+
+      const response = await this.client.send(command);
+      
+      logger.debug('File stream downloaded from R2 successfully', {
+        key,
+        contentType: response.ContentType
+      });
+
+      return response.Body;
+
+    } catch (error) {
+      logger.error('R2 stream download failed:', error);
+      throw new Error(`R2 stream download failed: ${error.message}`);
+    }
+  }
+
+  /**
    * Setup CDN optimization for new uploads
    */
   async setupCdnOptimization() {

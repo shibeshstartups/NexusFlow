@@ -1,7 +1,29 @@
 import React from 'react';
-import { Check, X, Zap, Smartphone, Monitor, Star, Users, Briefcase, ArrowRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Check, X, Zap, Smartphone, Monitor, Star, ArrowRight } from 'lucide-react';
 
 export default function PricingPlans() {
+  const navigate = useNavigate();
+  
+  const handlePlanSelect = (planId: string) => {
+    if (planId === 'free') {
+      // Redirect to sign up for free plan
+      navigate('/sign-in?plan=free');
+    } else {
+      // Redirect to payment gateway
+      navigate(`/payment?plan=${planId}`);
+    }
+  };
+  const getBasePlanId = (planName: string): string => {
+    const planMap: { [key: string]: string } = {
+      'Free Plan': 'free',
+      'Starter': 'starter',
+      'Personal': 'personal',
+      'Pro': 'pro'
+    };
+    return planMap[planName] || planName.toLowerCase().replace(/\s+/g, '_');
+  };
+
   const plans = [
     {
       name: 'Free Plan',
@@ -10,11 +32,7 @@ export default function PricingPlans() {
       icon: Zap,
       color: 'from-gray-500 to-gray-600',
       storage: '2 GB',
-<<<<<<< HEAD
       bandwidth: '10 GB',
-=======
-      bandwidth: '4 GB',
->>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
       cta: 'Start Free',
       popular: false
     },
@@ -25,11 +43,7 @@ export default function PricingPlans() {
       icon: Smartphone,
       color: 'from-green-600 to-green-700',
       storage: '30 GB',
-<<<<<<< HEAD
       bandwidth: '150 GB',
-=======
-      bandwidth: '120 GB',
->>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
       cta: 'Start Starter',
       popular: false
     },
@@ -40,58 +54,21 @@ export default function PricingPlans() {
       icon: Monitor,
       color: 'from-orange-600 to-orange-700',
       storage: '150 GB',
-<<<<<<< HEAD
       bandwidth: '750 GB',
-=======
-      bandwidth: '600 GB',
->>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
       cta: 'Start Personal',
       popular: true,
       badge: 'Most Popular'
     },
     {
-      name: 'Pro I',
-<<<<<<< HEAD
+      name: 'Pro',
       price: '₹299',
       period: 'per month',
       icon: Star,
       color: 'from-blue-600 to-blue-700',
       storage: '400 GB',
       bandwidth: '2 TB',
-      cta: 'Start Pro I',
+      cta: 'Start Pro',
       popular: false
-    },
-    {
-      name: 'Pro II',
-      price: '₹649',
-      period: 'per month',
-      icon: Users,
-      color: 'from-teal-600 to-teal-700',
-      storage: '2 TB',
-      bandwidth: '10 TB',
-      cta: 'Start Pro II',
-      popular: false
-    },
-    {
-      name: 'Pro III',
-      price: '₹1,299',
-      period: 'per month',
-      icon: Briefcase,
-      color: 'from-purple-600 to-purple-700',
-      storage: '8 TB',
-      bandwidth: '40 TB',
-      cta: 'Start Pro III',
-      popular: false
-=======
-      price: '₹399',
-      period: 'per month',
-      icon: Star,
-      color: 'from-blue-600 to-blue-700',
-      storage: '500 GB',
-      bandwidth: '2 TB',
-      cta: 'Start Pro I',
-      popular: false
->>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
     }
   ];
 
@@ -101,30 +78,11 @@ export default function PricingPlans() {
       items: [
         {
           name: 'Storage space',
-<<<<<<< HEAD
-          values: ['2 GB', '30 GB', '150 GB', '400 GB', '2 TB', '8 TB']
+          values: ['2 GB', '30 GB', '150 GB', '400 GB']
         },
         {
           name: 'Download bandwidth',
-          values: ['10 GB', '150 GB', '750 GB', '2 TB', '10 TB', '40 TB']
-        },
-        {
-          name: 'File versioning',
-          values: [false, true, true, true, true, true]
-        },
-        {
-          name: 'Advanced file management',
-          values: [false, false, true, true, true, true]
-        },
-        {
-          name: 'Bulk operations',
-          values: [false, false, false, true, true, true]
-=======
-          values: ['2 GB', '30 GB', '150 GB', '500 GB']
-        },
-        {
-          name: 'Download bandwidth',
-          values: ['4 GB', '120 GB', '600 GB', '2 TB']
+          values: ['10 GB', '150 GB', '750 GB', '2 TB']
         },
         {
           name: 'File versioning',
@@ -137,7 +95,6 @@ export default function PricingPlans() {
         {
           name: 'Bulk operations',
           values: [false, false, false, true]
->>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
         }
       ]
     },
@@ -146,17 +103,6 @@ export default function PricingPlans() {
       items: [
         {
           name: 'Web dashboard',
-<<<<<<< HEAD
-          values: ['Basic', 'Standard', 'Advanced', 'Advanced', 'Advanced', 'Advanced']
-        },
-        {
-          name: 'Share links',
-          values: [true, true, true, true, true, true]
-        },
-        {
-          name: 'Password protection',
-          values: [false, true, true, true, true, true]
-=======
           values: ['Basic', 'Standard', 'Advanced', 'Advanced']
         },
         {
@@ -166,7 +112,6 @@ export default function PricingPlans() {
         {
           name: 'Password protection',
           values: [false, true, true, true]
->>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
         }
       ]
     }
@@ -185,11 +130,7 @@ export default function PricingPlans() {
         </div>
 
         {/* Pricing Cards */}
-<<<<<<< HEAD
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-12">
-=======
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
->>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
           {plans.map((plan, index) => {
             const IconComponent = plan.icon;
             return (
@@ -231,6 +172,7 @@ export default function PricingPlans() {
                   </div>
 
                   <button
+                    onClick={() => handlePlanSelect(getBasePlanId(plan.name))}
                     className={`w-full py-2.5 px-3 rounded-lg font-semibold transition-all duration-300 text-sm ${
                       plan.popular
                         ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800 shadow-lg hover:shadow-xl'
@@ -340,6 +282,10 @@ export default function PricingPlans() {
             </div>
             <a 
               href="/developer-plans"
+              onClick={(e) => {
+                e.preventDefault();
+                navigate('/developer-plans');
+              }}
               className="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center mx-auto text-sm"
             >
               View Developer Plans
@@ -363,6 +309,10 @@ export default function PricingPlans() {
             </div>
             <a 
               href="/business-plans"
+              onClick={(e) => {
+                e.preventDefault();
+                navigate('/business-plans');
+              }}
               className="bg-teal-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-teal-700 transition-colors flex items-center mx-auto text-sm"
             >
               View Business Plans

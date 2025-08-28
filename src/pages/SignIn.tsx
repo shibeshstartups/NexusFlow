@@ -1,73 +1,78 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Mail, Lock, Eye, EyeOff, AlertCircle, CheckCircle } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { googleAuthService } from '../services/googleAuthService';
 
 export default function SignIn() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
+  
+  const { login, googleLogin, isLoading, error: authError, clearError } = useAuth();
+  const [localError, setLocalError] = useState('');
+  
+  // Combine auth context error with local validation errors
+  const error = authError || localError;
+
+  // Initialize Google OAuth on component mount
+  useEffect(() => {
+    googleAuthService.initializeGoogleSignIn();
+  }, []);
 
   const handleEmailSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-    setError('');
+    setLocalError('');
+    clearError();
 
     // Basic validation
     if (!email || !password) {
-      setError('Please fill in all fields');
-      setIsLoading(false);
+      setLocalError('Please fill in all fields');
       return;
     }
 
     if (!email.includes('@')) {
-      setError('Please enter a valid email address');
-      setIsLoading(false);
+      setLocalError('Please enter a valid email address');
       return;
     }
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Use AuthContext login method
+      await login(email, password, rememberMe);
       
-      // For demo purposes - in real app, this would be actual authentication
-      console.log('Email sign-in:', { email, password, rememberMe });
-      
-      // Redirect to dashboard
+      // Redirect to dashboard on successful login
       window.location.href = '/dashboard';
-<<<<<<< HEAD
-    } catch {
-=======
     } catch (err) {
->>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
-      setError('Invalid email or password. Please try again.');
-    } finally {
-      setIsLoading(false);
+      console.error('Login error:', err);
+      // Error is handled by AuthContext and displayed via error state
     }
   };
 
   const handleGoogleSignIn = async () => {
-    setIsLoading(true);
-    setError('');
+    setLocalError('');
+    clearError();
+
+    if (!googleAuthService.isConfigured()) {
+      setLocalError('Google OAuth is not configured. Please contact support.');
+      return;
+    }
 
     try {
-      // Simulate Google OAuth flow
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Use Google OAuth service for authentication
+      const googleResponse = await googleAuthService.signInWithPopup();
       
-      // In a real app, this would integrate with Google OAuth
-      console.log('Google sign-in initiated');
-      
-      // Redirect to dashboard
-      window.location.href = '/dashboard';
-<<<<<<< HEAD
-    } catch {
-=======
+      if (googleResponse.success && googleResponse.accessToken) {
+        // Use AuthContext's googleLogin method
+        await googleLogin(googleResponse.accessToken);
+        
+        // Redirect to dashboard on successful login
+        window.location.href = '/dashboard';
+      } else {
+        setLocalError(googleResponse.error || 'Google sign-in failed. Please try again.');
+      }
     } catch (err) {
->>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
-      setError('Google sign-in failed. Please try again.');
-    } finally {
-      setIsLoading(false);
+      console.error('Google sign-in error:', err);
+      // Error is handled by AuthContext and displayed via error state
     }
   };
 

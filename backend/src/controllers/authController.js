@@ -1,4 +1,6 @@
 import crypto from 'crypto';
+import jwt from 'jsonwebtoken';
+import { OAuth2Client } from 'google-auth-library';
 import User from '../models/User.js';
 import { AppError, catchAsync } from '../middleware/errorMiddleware.js';
 import { 
@@ -7,6 +9,12 @@ import {
   generateEmailVerificationToken 
 } from '../middleware/authMiddleware.js';
 import { logger } from '../utils/logger.js';
+
+// Initialize Google OAuth client
+const googleClient = new OAuth2Client({
+  clientId: process.env.GOOGLE_CLIENT_ID,
+  clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+});
 
 // Register new user
 export const register = catchAsync(async (req, res, next) => {
@@ -291,6 +299,83 @@ export const refreshToken = catchAsync(async (req, res, next) => {
   createSendToken(currentUser, 200, res, 'Token refreshed successfully');
 });
 
+// Google OAuth login
+export const googleLogin = catchAsync(async (req, res, next) => {
+  const { token } = req.body;
+
+  if (!token) {
+    return next(new AppError('Google token is required', 400));
+  }
+
+  try {
+    // Verify Google token
+    const ticket = await googleClient.verifyIdToken({
+      idToken: token,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+
+    const payload = ticket.getPayload();
+    
+    if (!payload) {
+      return next(new AppError('Invalid Google token', 401));
+    }
+
+    const { sub: googleId, email, name, picture, email_verified } = payload;
+
+    if (!email_verified) {
+      return next(new AppError('Google email is not verified', 400));
+    }
+
+    // Check if user already exists
+    let user = await User.findOne({ email });
+
+    if (user) {
+      // User exists, update Google ID if not set
+      if (!user.googleId) {
+        user.googleId = googleId;
+        user.avatar = picture;
+        await user.save({ validateBeforeSave: false });
+      }
+    } else {
+      // Create new user from Google data
+      user = await User.create({
+        name: name || email.split('@')[0],
+        email,
+        googleId,
+        avatar: picture,
+        isEmailVerified: email_verified,
+        password: crypto.randomBytes(32).toString('hex'), // Random password for OAuth users
+      });
+
+      logger.logAuth('GOOGLE_USER_CREATED', user._id, {
+        email: user.email,
+        name: user.name,
+        ip: req.ip
+      });
+    }
+
+    // Update last login
+    user.lastLogin = new Date();
+    user.loginCount += 1;
+    await user.save({ validateBeforeSave: false });
+
+    logger.logAuth('GOOGLE_LOGIN_SUCCESS', user._id, {
+      email: user.email,
+      ip: req.ip
+    });
+
+    // Send token
+    createSendToken(user, 200, res, 'Google login successful');
+  } catch (error) {
+    logger.logAuth('GOOGLE_LOGIN_FAILED', null, {
+      error: error.message,
+      ip: req.ip
+    });
+    
+    return next(new AppError('Google authentication failed', 401));
+  }
+});
+
 // Get current user info (for frontend to check auth status)
 export const getMe = catchAsync(async (req, res, next) => {
   const user = await User.findById(req.user.id);
@@ -321,6 +406,7 @@ export const getMe = catchAsync(async (req, res, next) => {
 export default {
   register,
   login,
+  googleLogin,
   logout,
   forgotPassword,
   resetPassword,

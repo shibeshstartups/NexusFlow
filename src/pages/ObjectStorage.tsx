@@ -1,9 +1,5 @@
 import React, { useState } from 'react';
-<<<<<<< HEAD
 import { ArrowLeft, Database, Shield, Globe, Code, BarChart3, CheckCircle, Cloud, Server, Lock, Gauge, Play } from 'lucide-react';
-=======
-import { ArrowLeft, Database, Shield, Zap, Globe, Code, BarChart3, CheckCircle, ArrowRight, Cloud, Server, Lock, Gauge, Users, FileText, Play, Download } from 'lucide-react';
->>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
 
 export default function ObjectStorage() {
   const [selectedUseCase, setSelectedUseCase] = useState('backup');

@@ -10,7 +10,8 @@ import {
   shareFolder,
   getSharedFolder
 } from '../controllers/folderController.js';
-import { protect, checkOwnership, optionalAuth } from '../middleware/authMiddleware.js';
+import { downloadFolderAsZip } from '../controllers/r2FileController.js';
+import { protect, checkOwnership, optionalAuth, checkTransferQuota } from '../middleware/authMiddleware.js';
 import { folderValidation } from '../middleware/validationMiddleware.js';
 import Folder from '../models/Folder.js';
 
@@ -41,6 +42,13 @@ router.patch('/:id/move',
 router.patch('/:id/share', 
   checkOwnership(Folder),
   shareFolder
+);
+
+// Folder download as ZIP
+router.get('/:id/download',
+  checkOwnership(Folder),
+  checkTransferQuota(),
+  downloadFolderAsZip
 );
 
 // Get folder tree structure
