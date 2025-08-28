@@ -1,4 +1,5 @@
-import { webcrypto } from 'crypto';
+// Use the browser's Web Crypto API
+const webcrypto = window.crypto;
 
 // Encryption algorithms supported
 export enum EncryptionAlgorithm {

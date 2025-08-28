@@ -15,6 +15,7 @@ import backgroundJobService from './services/backgroundJobService.js';
 import realTimeNotificationService from './services/realTimeNotificationService.js';
 import performanceMonitoringService from './services/performanceMonitoringService.js';
 import { errorHandler, notFound } from './middleware/errorMiddleware.js';
+import securityMiddleware from './middleware/securityMiddleware.js';
 import { logger } from './utils/logger.js';
 
 // Import routes
@@ -84,10 +85,45 @@ performanceMonitoringService.initialize().catch((error) => {
   // Don't exit on monitoring failure, just continue without it
 });
 
-// Security middleware
+// Security middleware with enhanced configuration
 app.use(helmet({
-  crossOriginResourcePolicy: { policy: "cross-origin" }
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      scriptSrc: ["'self'"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'"],
+      mediaSrc: ["'self'"],
+      objectSrc: ["'none'"],
+      childSrc: ["'self'"]
+    }
+  },
+  hsts: {
+    maxAge: 31536000,
+    includeSubDomains: true,
+    preload: true
+  },
+  noSniff: true,
+  frameguard: { action: 'deny' },
+  xssFilter: true
 }));
+
+// Additional security headers
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  
+  // Remove server information
+  res.removeHeader('X-Powered-By');
+  
+  next();
+});
 
 // Rate limiting
 const limiter = rateLimit({
@@ -104,15 +140,56 @@ const uploadLimiter = rateLimit({
   message: 'Too many upload requests, please try again later.'
 });
 
-// CORS configuration
+// Enhanced CORS configuration
+const allowedOrigins = [
+  process.env.FRONTEND_URL || 'http://localhost:5173',
+  'http://localhost:3000', // Development fallback
+  'https://nexusflow.com', // Production domain
+  'https://www.nexusflow.com' // Production www domain
+];
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
-  credentials: true
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, etc.)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    
+    // Log suspicious requests
+    logger.warn('Blocked CORS request from unauthorized origin', {
+      origin,
+      timestamp: new Date().toISOString()
+    });
+    
+    return callback(new Error('Not allowed by CORS policy'), false);
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  maxAge: 86400 // 24 hours
 }));
 
-// Body parsing middleware
-app.use(express.json({ limit: '10mb' }));
+// Body parsing middleware with enhanced security
+app.use(express.json({ 
+  limit: '10mb',
+  verify: (req, res, buf) => {
+    // Store raw body for signature verification if needed
+    req.rawBody = buf;
+  }
+}));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Apply comprehensive security middleware
+app.use(securityMiddleware.requestSizeLimit(10)); // 10MB limit
+app.use(securityMiddleware.sqlInjectionProtection);
+app.use(securityMiddleware.noSQLInjectionProtection);
+app.use(securityMiddleware.xssProtection);
+app.use(securityMiddleware.suspiciousUserAgentDetection);
+app.use(securityMiddleware.honeypotProtection);
+app.use(securityMiddleware.contentTypeValidation(['application/json', 'multipart/form-data', 'application/x-www-form-urlencoded']));
+app.use(securityMiddleware.progressiveDelay);
 
 // Compression middleware
 app.use(compression());

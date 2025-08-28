@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { Zap, Menu, X, ChevronDown, Search, User, Settings, BarChart3, FileText, Shield, Phone, Building, Code, Briefcase } from 'lucide-react';
 
 export default function Header() {
@@ -93,14 +94,14 @@ export default function Header() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <a href="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
+          <Link to="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
             <div className="bg-gradient-to-br from-blue-600 to-blue-700 p-1.5 rounded-lg">
               <Zap className="w-5 h-5 text-white" />
             </div>
             <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-teal-600 bg-clip-text text-transparent">
               NexusFlow
             </span>
-          </a>
+          </Link>
 
           {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center space-x-1" ref={dropdownRef}>
@@ -119,12 +120,21 @@ export default function Header() {
                     }`} />
                   </button>
                 ) : (
-                  <a
-                    href={item.href}
-                    className="flex items-center px-3 py-1.5 text-gray-700 hover:text-blue-600 font-medium transition-colors rounded-lg hover:bg-gray-50 h-8"
-                  >
-                    {item.label}
-                  </a>
+                  item.href.startsWith('#') ? (
+                    <a
+                      href={item.href}
+                      className="flex items-center px-3 py-1.5 text-gray-700 hover:text-blue-600 font-medium transition-colors rounded-lg hover:bg-gray-50 h-8"
+                    >
+                      {item.label}
+                    </a>
+                  ) : (
+                    <Link
+                      to={item.href}
+                      className="flex items-center px-3 py-1.5 text-gray-700 hover:text-blue-600 font-medium transition-colors rounded-lg hover:bg-gray-50 h-8"
+                    >
+                      {item.label}
+                    </Link>
+                  )
                 )}
 
                 {/* Mega Menu */}
@@ -143,10 +153,11 @@ export default function Header() {
                             </div>
                             <div className="space-y-2">
                               {section.items.map((subItem) => (
-                                <a
+                                <Link
                                   key={subItem.label}
-                                  href={subItem.href}
+                                  to={subItem.href}
                                   className="block p-2 rounded-lg hover:bg-gray-50 transition-colors group"
+                                  onClick={() => setActiveDropdown(null)}
                                 >
                                   <div className="font-medium text-gray-900 group-hover:text-blue-600 transition-colors text-sm">
                                     {subItem.label}
@@ -154,7 +165,7 @@ export default function Header() {
                                   <div className="text-xs text-gray-600 mt-0.5">
                                     {subItem.description}
                                   </div>
-                                </a>
+                                </Link>
                               ))}
                             </div>
                           </div>
@@ -170,14 +181,15 @@ export default function Header() {
                     {item.dropdown.map((subItem) => {
                       const IconComponent = subItem.icon;
                       return (
-                        <a
+                        <Link
                           key={subItem.label}
-                          href={subItem.href}
+                          to={subItem.href}
                           className="flex items-center px-3 py-2 text-gray-700 hover:text-blue-600 hover:bg-gray-50 transition-colors text-sm"
+                          onClick={() => setActiveDropdown(null)}
                         >
                           <IconComponent className="w-3 h-3 mr-2" />
                           {subItem.label}
-                        </a>
+                        </Link>
                       );
                     })}
                   </div>
@@ -218,9 +230,9 @@ export default function Header() {
 
             {/* User Menu */}
             <div className="flex items-center space-x-3">
-              <a href="/sign-in" className="text-gray-700 hover:text-blue-600 font-medium transition-colors">
+              <Link to="/sign-in" className="text-gray-700 hover:text-blue-600 font-medium transition-colors">
                 Sign In
-              </a>
+              </Link>
               <button className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 py-1.5 rounded-lg font-medium hover:from-blue-700 hover:to-blue-800 transition-all duration-300 shadow-lg hover:shadow-xl text-sm">
                 Start Free Trial
               </button>
@@ -271,46 +283,49 @@ export default function Header() {
                               <div key={section.title}>
                                 <div className="font-medium text-gray-900 py-1.5 text-sm">{section.title}</div>
                                 {section.items.map((subItem) => (
-                                  <a
+                                  <Link
                                     key={subItem.label}
-                                    href={subItem.href}
+                                    to={subItem.href}
                                     className="block text-gray-600 hover:text-blue-600 py-0.5 pl-3 text-sm"
+                                    onClick={() => {setActiveDropdown(null); setIsMenuOpen(false);}}
                                   >
                                     {subItem.label}
-                                  </a>
+                                  </Link>
                                 ))}
                               </div>
                             ))
                           ) : (
                             item.dropdown?.map((subItem) => (
-                              <a
+                              <Link
                                 key={subItem.label}
-                                href={subItem.href}
+                                to={subItem.href}
                                 className="block text-gray-600 hover:text-blue-600 py-0.5 text-sm"
+                                onClick={() => {setActiveDropdown(null); setIsMenuOpen(false);}}
                               >
                                 {subItem.label}
-                              </a>
+                              </Link>
                             ))
                           )}
                         </div>
                       )}
                     </div>
                   ) : (
-                    <a
-                      href={item.href}
+                    <Link
+                      to={item.href}
                       className="block text-gray-700 hover:text-blue-600 font-medium py-1.5 text-sm"
+                      onClick={() => setIsMenuOpen(false)}
                     >
                       {item.label}
-                    </a>
+                    </Link>
                   )}
                 </div>
               ))}
 
               {/* Mobile User Actions */}
               <div className="pt-3 border-t space-y-2">
-                <a href="/sign-in" className="block w-full text-left text-gray-700 hover:text-blue-600 font-medium py-2">
+                <Link to="/sign-in" className="block w-full text-left text-gray-700 hover:text-blue-600 font-medium py-2">
                   Sign In
-                </a>
+                </Link>
                 <button className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 py-2 rounded-lg font-medium text-sm">
                   Start Free Trial
                 </button>

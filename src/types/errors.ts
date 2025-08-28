@@ -1,4 +1,5 @@
 // Error type definitions and interfaces
+
 export interface AppError {
   id: string;
   type: ErrorType;
@@ -6,11 +7,7 @@ export interface AppError {
   message: string;
   userMessage: string;
   timestamp: Date;
-<<<<<<< HEAD
-  context?: Record<string, unknown>;
-=======
   context?: Record<string, any>;
->>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
   stack?: string;
   userId?: string;
   sessionId?: string;
@@ -24,6 +21,7 @@ export enum ErrorType {
   AUTHORIZATION = 'AUTHORIZATION',
   RESOURCE_LOADING = 'RESOURCE_LOADING',
   STORAGE = 'STORAGE',
+  UI = 'UI',
   UPLOAD = 'UPLOAD',
   DOWNLOAD = 'DOWNLOAD',
   UNKNOWN = 'UNKNOWN'
@@ -48,11 +46,7 @@ export interface APIError extends AppError {
   statusCode: number;
   endpoint: string;
   method: string;
-<<<<<<< HEAD
-  responseBody?: unknown;
-=======
   responseBody?: any;
->>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
 }
 
 export interface ValidationError extends AppError {
@@ -73,6 +67,18 @@ export interface ResourceError extends AppError {
   resourceUrl: string;
 }
 
+export interface StorageError extends AppError {
+  type: ErrorType.STORAGE;
+  operation: 'read' | 'write' | 'delete';
+  storageType: 'localStorage' | 'sessionStorage' | 'indexedDB';
+}
+
+export interface UIError extends AppError {
+  type: ErrorType.UI;
+  component?: string;
+  action?: string;
+}
+
 // Error recovery strategies
 export interface ErrorRecoveryStrategy {
   canRecover: (error: AppError) => boolean;
@@ -87,4 +93,25 @@ export interface ErrorNotificationConfig {
   hideAfter?: number;
   allowRetry: boolean;
   showDetails: boolean;
+}
+
+// Error handler configuration
+export interface ErrorHandlerConfig {
+  maxRetries: number;
+  retryDelay: number;
+  enableLogging: boolean;
+  enableRecovery: boolean;
+  logLevel: 'error' | 'warn' | 'info' | 'debug';
+}
+
+// Error context for enhanced debugging
+export interface ErrorContext {
+  url?: string;
+  userAgent?: string;
+  timestamp: number;
+  sessionId?: string;
+  userId?: string;
+  buildVersion?: string;
+  feature?: string;
+  [key: string]: any;
 }

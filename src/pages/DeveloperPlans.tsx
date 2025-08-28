@@ -1,115 +1,41 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Code, Database, Zap, Shield, Clock, CheckCircle, TrendingDown } from 'lucide-react';
+import { 
+  DEVELOPER_PLANS, 
+  INDUSTRY_COMPARISONS, 
+  PRICING_CONSTANTS,
+  calculateDeveloperCost,
+  findBestDeveloperPlan
+} from '../config/pricing';
 
 export default function DeveloperPlans() {
-  const developerPlans = [
-    {
-      name: 'Developer Starter',
-      price: '₹599',
-      period: 'per month',
-      icon: Code,
-      color: 'from-blue-600 to-blue-700',
-      storage: 500,
-      bandwidth: 2500,
-      features: [
-        '500 GB Storage',
-        '2.5 TB Download Bandwidth',
-        'Full S3 API compatibility',
-        'API rate limiting: 1000 req/min',
-        'Webhook support',
-        'SDK for popular languages',
-        'Email support'
-      ],
-      cta: 'Start Developer',
-      popular: false
-    },
-    {
-      name: 'Developer Basic',
-      price: '₹899',
-      period: 'per month',
-      icon: Database,
-      color: 'from-green-600 to-green-700',
-      storage: 1000,
-      bandwidth: 5000,
-      features: [
-        '1 TB Storage',
-        '5 TB Download Bandwidth',
-        'Full S3 API compatibility',
-        'API rate limiting: 2500 req/min',
-        'Advanced webhooks',
-        'Multiple environments',
-        'Priority email support',
-        'Basic analytics'
-      ],
-      cta: 'Start Developer Basic',
-      popular: false
-    },
-    {
-      name: 'Developer Pro',
-      price: '₹1,299',
-      period: 'per month',
-      icon: Database,
-      color: 'from-purple-600 to-purple-700',
-      storage: 2000,
-      bandwidth: 10000,
-      features: [
-        '2 TB Storage',
-        '10 TB Download Bandwidth',
-        'Full S3 API compatibility',
-        'API rate limiting: 5000 req/min',
-        'Advanced webhooks',
-        'Custom endpoints',
-        'Priority support',
-        'API analytics dashboard'
-      ],
-      cta: 'Start Developer Pro',
-      popular: true,
-      badge: 'Most Popular'
-    },
-    {
-      name: 'Developer Advanced',
-      price: '₹1,999',
-      period: 'per month',
-      icon: Zap,
-      color: 'from-orange-600 to-orange-700',
-      storage: 5000,
-      bandwidth: 25000,
-      features: [
-        '5 TB Storage',
-        '25 TB Download Bandwidth',
-        'Full S3 API compatibility',
-        'API rate limiting: 10000 req/min',
-        'Real-time webhooks',
-        'Custom domains',
-        'Phone support',
-        'Advanced analytics',
-        'Multi-region support'
-      ],
-      cta: 'Start Developer Advanced',
-      popular: false
-    },
-    {
-      name: 'Developer Enterprise',
-      price: 'Custom',
-      period: 'pricing',
-      icon: Shield,
-      color: 'from-gray-600 to-gray-700',
-      storage: Infinity,
-      bandwidth: Infinity,
-      features: [
-        'Unlimited Storage',
-        'Unlimited Bandwidth',
-        'Dedicated API endpoints',
-        'No rate limiting',
-        'Custom integrations',
-        'White-label options',
-        '24/7 dedicated support',
-        'SLA guarantees'
-      ],
-      cta: 'Contact Sales',
-      popular: false
+  const developerPlans = DEVELOPER_PLANS.map(plan => ({
+    ...plan,
+    icon: getIconForPlan(plan.id),
+    color: getColorForPlan(plan.id)
+  }));
+
+  function getIconForPlan(planId: string) {
+    switch (planId) {
+      case 'developer_starter': return Code;
+      case 'developer_basic': return Database;
+      case 'developer_pro': return Database;
+      case 'developer_advanced': return Zap;
+      case 'developer_enterprise': return Shield;
+      default: return Code;
     }
-  ];
+  }
+
+  function getColorForPlan(planId: string) {
+    switch (planId) {
+      case 'developer_starter': return 'from-blue-600 to-blue-700';
+      case 'developer_basic': return 'from-green-600 to-green-700';
+      case 'developer_pro': return 'from-purple-600 to-purple-700';
+      case 'developer_advanced': return 'from-orange-600 to-orange-700';
+      case 'developer_enterprise': return 'from-gray-600 to-gray-700';
+      default: return 'from-blue-600 to-blue-700';
+    }
+  }
 
   // Developer-specific calculator state
   const [storageGB, setStorageGB] = useState(1000);
@@ -119,38 +45,20 @@ export default function DeveloperPlans() {
   const [needsWebhooks, setNeedsWebhooks] = useState(false);
   const [needsAnalytics, setNeedsAnalytics] = useState(false);
 
-  // Pricing constants for developers
-  const STORAGE_COST_PER_GB = 0.85; // 30% cheaper than competitors (₹1.20)
-  const BANDWIDTH_COST_PER_GB = 0.35; // 30% cheaper than competitors (₹0.50)
-  const API_COST_PER_1K_REQUESTS = 0.18; // 30% cheaper than competitors (₹0.25)
-  const ENVIRONMENT_COST = 105; // 30% cheaper than competitors (₹150)
-  const WEBHOOK_COST = 209; // 30% cheaper than competitors (₹299)
-  const ANALYTICS_COST = 349; // 30% cheaper than competitors (₹499)
-
   const calculateCustomCost = () => {
-    const storageCost = storageGB * STORAGE_COST_PER_GB;
-    const bandwidthCost = bandwidthGB * BANDWIDTH_COST_PER_GB;
-    const apiCost = (apiRequestsPerMin * 60 * 24 * 30 / 1000) * API_COST_PER_1K_REQUESTS; // Monthly API cost
-    const environmentCost = Math.max(0, environments - 1) * ENVIRONMENT_COST; // First environment free
-    const webhookCost = needsWebhooks ? WEBHOOK_COST : 0;
-    const analyticsCost = needsAnalytics ? ANALYTICS_COST : 0;
-    
-    return storageCost + bandwidthCost + apiCost + environmentCost + webhookCost + analyticsCost;
+    return calculateDeveloperCost(
+      storageGB,
+      bandwidthGB,
+      apiRequestsPerMin,
+      environments,
+      needsWebhooks,
+      needsAnalytics
+    );
   };
 
   const calculateRecommendation = () => {
     const customCost = calculateCustomCost();
-    
-    // Find the best plan that covers the requirements
-    let recommendedPlan = developerPlans[developerPlans.length - 1]; // Default to enterprise
-    
-    for (const plan of developerPlans) {
-      if (plan.storage >= storageGB && plan.bandwidth >= bandwidthGB && plan.price !== 'Custom') {
-        recommendedPlan = plan;
-        break;
-      }
-    }
-
+    const recommendedPlan = findBestDeveloperPlan(storageGB, bandwidthGB, apiRequestsPerMin);
     const planPrice = recommendedPlan.price === 'Custom' ? customCost : parseInt(recommendedPlan.price.replace('₹', '').replace(',', ''));
     const savings = customCost > planPrice ? Math.round(((customCost - planPrice) / customCost) * 100) : 0;
 
@@ -190,32 +98,7 @@ export default function DeveloperPlans() {
     }
   ];
 
-  const industryComparison = [
-    {
-      metric: 'API Response Time',
-      industry: '200-500ms average',
-      nexus: 'Sub-100ms guaranteed',
-      improvement: '2-5x faster'
-    },
-    {
-      metric: 'Storage Cost (India)',
-      industry: '₹1.20/GB (Competitors)',
-      nexus: '₹0.85/GB equivalent',
-      improvement: '30% cheaper'
-    },
-    {
-      metric: 'Egress Cost (India)',
-      industry: '₹0.50/GB (Competitors)',
-      nexus: '₹0.35/GB',
-      improvement: '30% cheaper'
-    },
-    {
-      metric: 'API Setup Time',
-      industry: '2-3 days configuration',
-      nexus: '5 minutes setup',
-      improvement: '99% faster'
-    }
-  ];
+  const industryComparison = INDUSTRY_COMPARISONS.developer;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -319,7 +202,7 @@ export default function DeveloperPlans() {
                     <div className="text-sm text-gray-600">
                       <div className="font-medium">Monthly Cost:</div>
                       <div className="text-lg font-bold text-blue-600">
-                        ₹{Math.round(storageGB * STORAGE_COST_PER_GB)}
+                        ₹{Math.round(storageGB * PRICING_CONSTANTS.STORAGE_COST_PER_GB)}
                       </div>
                     </div>
                   </div>
@@ -367,7 +250,7 @@ export default function DeveloperPlans() {
                     <div className="text-sm text-gray-600">
                       <div className="font-medium">Monthly Cost:</div>
                       <div className="text-lg font-bold text-teal-600">
-                        ₹{Math.round(bandwidthGB * BANDWIDTH_COST_PER_GB)}
+                        ₹{Math.round(bandwidthGB * PRICING_CONSTANTS.BANDWIDTH_COST_PER_GB)}
                       </div>
                     </div>
                   </div>
@@ -414,7 +297,7 @@ export default function DeveloperPlans() {
                     <div className="text-sm text-gray-600">
                       <div className="font-medium">Monthly Cost:</div>
                       <div className="text-lg font-bold text-purple-600">
-                        ₹{Math.round((apiRequestsPerMin * 60 * 24 * 30 / 1000) * API_COST_PER_1K_REQUESTS)}
+                        ₹{Math.round((apiRequestsPerMin * 60 * 24 * 30 / 1000) * PRICING_CONSTANTS.API_COST_PER_1K_REQUESTS)}
                       </div>
                     </div>
                   </div>
@@ -454,9 +337,9 @@ export default function DeveloperPlans() {
                       className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                     >
                       <option value={1}>1 Environment (Free)</option>
-                      <option value={2}>2 Environments (+₹105/month)</option>
-                      <option value={3}>3 Environments (+₹210/month)</option>
-                      <option value={5}>5 Environments (+₹420/month)</option>
+                      <option value={2}>2 Environments (+₹{PRICING_CONSTANTS.ENVIRONMENT_COST}/month)</option>
+                      <option value={3}>3 Environments (+₹{PRICING_CONSTANTS.ENVIRONMENT_COST * 2}/month)</option>
+                      <option value={5}>5 Environments (+₹{PRICING_CONSTANTS.ENVIRONMENT_COST * 4}/month)</option>
                     </select>
                   </div>
                   
@@ -468,7 +351,7 @@ export default function DeveloperPlans() {
                         onChange={(e) => setNeedsWebhooks(e.target.checked)}
                         className="mr-2 rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50" 
                       />
-                      <span className="text-sm">Advanced Webhooks (+₹209/month)</span>
+                      <span className="text-sm">Advanced Webhooks (+₹{PRICING_CONSTANTS.WEBHOOK_COST}/month)</span>
                     </label>
                     <label className="flex items-center">
                       <input 
@@ -477,7 +360,7 @@ export default function DeveloperPlans() {
                         onChange={(e) => setNeedsAnalytics(e.target.checked)}
                         className="mr-2 rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50" 
                       />
-                      <span className="text-sm">Analytics Dashboard (+₹349/month)</span>
+                      <span className="text-sm">Analytics Dashboard (+₹{PRICING_CONSTANTS.ANALYTICS_COST}/month)</span>
                     </label>
                   </div>
                 </div>
@@ -493,33 +376,33 @@ export default function DeveloperPlans() {
                 <h5 className="font-semibold text-gray-900 mb-3">Pay-As-You-Go Pricing</h5>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Storage ({storageGB} GB × ₹0.85):</span>
-                    <span className="font-medium">₹{Math.round(storageGB * STORAGE_COST_PER_GB)}</span>
+                    <span className="text-gray-600">Storage ({storageGB} GB × ₹{PRICING_CONSTANTS.STORAGE_COST_PER_GB}):</span>
+                    <span className="font-medium">₹{Math.round(storageGB * PRICING_CONSTANTS.STORAGE_COST_PER_GB)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Bandwidth ({bandwidthGB} GB × ₹0.35):</span>
-                    <span className="font-medium">₹{Math.round(bandwidthGB * BANDWIDTH_COST_PER_GB)}</span>
+                    <span className="text-gray-600">Bandwidth ({bandwidthGB} GB × ₹{PRICING_CONSTANTS.BANDWIDTH_COST_PER_GB}):</span>
+                    <span className="font-medium">₹{Math.round(bandwidthGB * PRICING_CONSTANTS.BANDWIDTH_COST_PER_GB)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">API Requests ({Math.round(apiRequestsPerMin * 60 * 24 * 30 / 1000)}K/month × ₹0.18):</span>
-                    <span className="font-medium">₹{Math.round((apiRequestsPerMin * 60 * 24 * 30 / 1000) * API_COST_PER_1K_REQUESTS)}</span>
+                    <span className="text-gray-600">API Requests ({Math.round(apiRequestsPerMin * 60 * 24 * 30 / 1000)}K/month × ₹{PRICING_CONSTANTS.API_COST_PER_1K_REQUESTS}):</span>
+                    <span className="font-medium">₹{Math.round((apiRequestsPerMin * 60 * 24 * 30 / 1000) * PRICING_CONSTANTS.API_COST_PER_1K_REQUESTS)}</span>
                   </div>
                   {environments > 1 && (
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Extra Environments ({environments - 1} × ₹105):</span>
-                      <span className="font-medium">₹{(environments - 1) * ENVIRONMENT_COST}</span>
+                      <span className="text-gray-600">Extra Environments ({environments - 1} × ₹{PRICING_CONSTANTS.ENVIRONMENT_COST}):</span>
+                      <span className="font-medium">₹{(environments - 1) * PRICING_CONSTANTS.ENVIRONMENT_COST}</span>
                     </div>
                   )}
                   {needsWebhooks && (
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Advanced Webhooks (+₹209):</span>
-                      <span className="font-medium">₹{WEBHOOK_COST}</span>
+                      <span className="text-gray-600">Advanced Webhooks (+₹{PRICING_CONSTANTS.WEBHOOK_COST}):</span>
+                      <span className="font-medium">₹{PRICING_CONSTANTS.WEBHOOK_COST}</span>
                     </div>
                   )}
                   {needsAnalytics && (
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Analytics Dashboard (+₹349):</span>
-                      <span className="font-medium">₹{ANALYTICS_COST}</span>
+                      <span className="text-gray-600">Analytics Dashboard (+₹{PRICING_CONSTANTS.ANALYTICS_COST}):</span>
+                      <span className="font-medium">₹{PRICING_CONSTANTS.ANALYTICS_COST}</span>
                     </div>
                   )}
                   <div className="border-t pt-2 flex justify-between font-bold">

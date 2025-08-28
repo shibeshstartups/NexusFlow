@@ -1,9 +1,5 @@
-<<<<<<< HEAD
-import { ArrowLeft, Book, Code, FileText, ExternalLink, Copy, CheckCircle } from 'lucide-react';
-=======
 import React from 'react';
 import { ArrowLeft, Book, Code, FileText, Search, ExternalLink, Copy, CheckCircle } from 'lucide-react';
->>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
 
 export default function Documentation() {
   return (

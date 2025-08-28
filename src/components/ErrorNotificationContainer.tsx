@@ -13,11 +13,7 @@ const ErrorNotificationContainer: React.FC = () => {
 
   return (
     <div className="fixed top-4 right-4 space-y-2 z-50">
-<<<<<<< HEAD
       {errors.map((error) => (
-=======
-      {errors.map((error, index) => (
->>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
         <ErrorNotification
           key={error.id}
           error={error}

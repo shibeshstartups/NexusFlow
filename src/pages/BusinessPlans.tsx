@@ -1,124 +1,41 @@
 import { useState } from 'react';
 import { ArrowLeft, Briefcase, Users, Shield, BarChart3, Clock, CheckCircle, TrendingDown, Building, Globe, Zap, Database, Settings } from 'lucide-react';
+import { 
+  BUSINESS_PLANS, 
+  INDUSTRY_COMPARISONS, 
+  PRICING_CONSTANTS,
+  calculateBusinessCost,
+  findBestBusinessPlan
+} from '../config/pricing';
 
 export default function BusinessPlans() {
-  const businessPlans = [
-    {
-      name: 'Business Starter',
-      price: '₹1,499',
-      period: 'per month',
-      icon: Briefcase,
-      color: 'from-teal-600 to-teal-700',
-      storage: 1000,
-      bandwidth: 5000,
-      teamMembers: 5,
-      features: [
-        '1 TB Storage',
-        '5 TB Download Bandwidth',
-        'Up to 5 team members',
-        'Basic team management',
-        'Standard analytics',
-        'Email support',
-        'Basic compliance reports',
-        'Custom domains'
-      ],
-      cta: 'Start Business Starter',
-      popular: false
-    },
-    {
-      name: 'Business Pro',
-      price: '₹2,999',
-      period: 'per month',
-      icon: Users,
-      color: 'from-blue-600 to-blue-700',
-      storage: 5000,
-      bandwidth: 25000,
-      teamMembers: 25,
-      features: [
-        '5 TB Storage',
-        '25 TB Download Bandwidth',
-        'Up to 25 team members',
-        'Advanced team management',
-        'Role-based permissions',
-        'Advanced analytics',
-        'Priority email support',
-        'Compliance dashboard',
-        'API access included'
-      ],
-      cta: 'Start Business Pro',
-      popular: true,
-      badge: 'Most Popular'
-    },
-    {
-      name: 'Business Advanced',
-      price: '₹5,999',
-      period: 'per month',
-      icon: Building,
-      color: 'from-purple-600 to-purple-700',
-      storage: 15000,
-      bandwidth: 75000,
-      teamMembers: 100,
-      features: [
-        '15 TB Storage',
-        '75 TB Download Bandwidth',
-        'Up to 100 team members',
-        'Advanced security controls',
-        'Audit logs & compliance',
-        'Custom integrations',
-        'Phone support',
-        'Dedicated account manager',
-        'SLA guarantees'
-      ],
-      cta: 'Start Business Advanced',
-      popular: false
-    },
-    {
-      name: 'Enterprise',
-      price: '₹12,999',
-      period: 'per month',
-      icon: Globe,
-      color: 'from-gray-600 to-gray-700',
-      storage: 50000,
-      bandwidth: 250000,
-      teamMembers: Infinity,
-      features: [
-        '50 TB Storage',
-        '250 TB Download Bandwidth',
-        'Unlimited team members',
-        'White-label solutions',
-        'Custom compliance reports',
-        'Dedicated infrastructure',
-        'On-premise deployment',
-        '24/7 dedicated support',
-        'Custom SLA'
-      ],
-      cta: 'Contact Enterprise Sales',
-      popular: false
-    },
-    {
-      name: 'Custom Enterprise',
-      price: 'Custom',
-      period: 'pricing',
-      icon: Settings,
-      color: 'from-orange-600 to-orange-700',
-      storage: Infinity,
-      bandwidth: Infinity,
-      teamMembers: Infinity,
-      features: [
-        'Unlimited Storage',
-        'Unlimited Bandwidth',
-        'Unlimited team members',
-        'Custom feature development',
-        'Dedicated data centers',
-        'Custom compliance frameworks',
-        'White-label platform',
-        'Dedicated engineering team',
-        'Custom contracts & SLA'
-      ],
-      cta: 'Contact Custom Sales',
-      popular: false
+  const businessPlans = BUSINESS_PLANS.map(plan => ({
+    ...plan,
+    icon: getIconForPlan(plan.id),
+    color: getColorForPlan(plan.id)
+  }));
+
+  function getIconForPlan(planId: string) {
+    switch (planId) {
+      case 'business_starter': return Briefcase;
+      case 'business_pro': return Users;
+      case 'business_advanced': return Building;
+      case 'enterprise': return Globe;
+      case 'custom_enterprise': return Settings;
+      default: return Briefcase;
     }
-  ];
+  }
+
+  function getColorForPlan(planId: string) {
+    switch (planId) {
+      case 'business_starter': return 'from-teal-600 to-teal-700';
+      case 'business_pro': return 'from-blue-600 to-blue-700';
+      case 'business_advanced': return 'from-purple-600 to-purple-700';
+      case 'enterprise': return 'from-gray-600 to-gray-700';
+      case 'custom_enterprise': return 'from-orange-600 to-orange-700';
+      default: return 'from-teal-600 to-teal-700';
+    }
+  }
 
   // Business-specific calculator state
   const [storageGB, setStorageGB] = useState(5000);
@@ -129,43 +46,21 @@ export default function BusinessPlans() {
   const [needsDedicatedSupport, setNeedsDedicatedSupport] = useState(false);
   const [needsCustomIntegrations, setNeedsCustomIntegrations] = useState(false);
 
-  // Business pricing constants (30% cheaper than competitors)
-  const STORAGE_COST_PER_GB = 0.70; // 30% cheaper than ₹1.00 competitor rate
-  const BANDWIDTH_COST_PER_GB = 0.35; // 30% cheaper than ₹0.50 competitor rate
-  const TEAM_MEMBER_COST = 70; // 30% cheaper than ₹100 per user
-  const COMPLIANCE_COST = 699; // 30% cheaper than ₹999
-  const ADVANCED_SECURITY_COST = 1399; // 30% cheaper than ₹1999
-  const DEDICATED_SUPPORT_COST = 2099; // 30% cheaper than ₹2999
-  const CUSTOM_INTEGRATIONS_COST = 1749; // 30% cheaper than ₹2499
-
   const calculateCustomCost = () => {
-    const storageCost = storageGB * STORAGE_COST_PER_GB;
-    const bandwidthCost = bandwidthGB * BANDWIDTH_COST_PER_GB;
-    const teamCost = Math.max(0, teamMembers - 5) * TEAM_MEMBER_COST; // First 5 users free
-    const complianceCost = needsCompliance ? COMPLIANCE_COST : 0;
-    const securityCost = needsAdvancedSecurity ? ADVANCED_SECURITY_COST : 0;
-    const supportCost = needsDedicatedSupport ? DEDICATED_SUPPORT_COST : 0;
-    const integrationsCost = needsCustomIntegrations ? CUSTOM_INTEGRATIONS_COST : 0;
-    
-    return storageCost + bandwidthCost + teamCost + complianceCost + securityCost + supportCost + integrationsCost;
+    return calculateBusinessCost(
+      storageGB,
+      bandwidthGB,
+      teamMembers,
+      needsCompliance,
+      needsAdvancedSecurity,
+      needsDedicatedSupport,
+      needsCustomIntegrations
+    );
   };
 
   const calculateRecommendation = () => {
     const customCost = calculateCustomCost();
-    
-    // Find the best plan that covers the requirements
-    let recommendedPlan = businessPlans[businessPlans.length - 1]; // Default to custom enterprise
-    
-    for (const plan of businessPlans) {
-      if (plan.storage >= storageGB && 
-          plan.bandwidth >= bandwidthGB && 
-          plan.teamMembers >= teamMembers && 
-          plan.price !== 'Custom') {
-        recommendedPlan = plan;
-        break;
-      }
-    }
-
+    const recommendedPlan = findBestBusinessPlan(storageGB, bandwidthGB, teamMembers);
     const planPrice = recommendedPlan.price === 'Custom' ? customCost : parseInt(recommendedPlan.price.replace('₹', '').replace(',', ''));
     const savings = customCost > planPrice ? Math.round(((customCost - planPrice) / customCost) * 100) : 0;
 
@@ -214,32 +109,7 @@ export default function BusinessPlans() {
     'Encryption at rest and in transit'
   ];
 
-  const industryComparison = [
-    {
-      metric: 'Team Collaboration',
-      industry: '₹150/user (Competitors)',
-      nexus: '₹70/user equivalent',
-      improvement: '30% cheaper'
-    },
-    {
-      metric: 'Storage Cost (India)',
-      industry: '₹1.00/GB (Competitors)',
-      nexus: '₹0.70/GB equivalent',
-      improvement: '30% cheaper'
-    },
-    {
-      metric: 'Egress Cost (India)',
-      industry: '₹0.50/GB (Competitors)',
-      nexus: '₹0.35/GB',
-      improvement: '30% cheaper'
-    },
-    {
-      metric: 'Compliance Features',
-      industry: '₹999/month (Competitors)',
-      nexus: '₹699/month',
-      improvement: '30% cheaper'
-    }
-  ];
+  const industryComparison = INDUSTRY_COMPARISONS.business;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -343,7 +213,7 @@ export default function BusinessPlans() {
                     <div className="text-sm text-gray-600">
                       <div className="font-medium">Monthly Cost:</div>
                       <div className="text-lg font-bold text-teal-600">
-                        ₹{Math.round(storageGB * STORAGE_COST_PER_GB)}
+                        ₹{Math.round(storageGB * PRICING_CONSTANTS.STORAGE_COST_PER_GB_BUSINESS)}
                       </div>
                     </div>
                   </div>
@@ -391,7 +261,7 @@ export default function BusinessPlans() {
                     <div className="text-sm text-gray-600">
                       <div className="font-medium">Monthly Cost:</div>
                       <div className="text-lg font-bold text-blue-600">
-                        ₹{Math.round(bandwidthGB * BANDWIDTH_COST_PER_GB)}
+                        ₹{Math.round(bandwidthGB * PRICING_CONSTANTS.BANDWIDTH_COST_PER_GB)}
                       </div>
                     </div>
                   </div>
@@ -438,7 +308,7 @@ export default function BusinessPlans() {
                     <div className="text-sm text-gray-600">
                       <div className="font-medium">Monthly Cost:</div>
                       <div className="text-lg font-bold text-purple-600">
-                        ₹{Math.max(0, teamMembers - 5) * TEAM_MEMBER_COST}
+                        ₹{Math.max(0, teamMembers - 5) * PRICING_CONSTANTS.TEAM_MEMBER_COST}
                       </div>
                       <div className="text-xs text-gray-500">First 5 users free</div>
                     </div>
@@ -478,7 +348,7 @@ export default function BusinessPlans() {
                       onChange={(e) => setNeedsCompliance(e.target.checked)}
                       className="mr-3 rounded border-gray-300 text-teal-600 shadow-sm focus:border-teal-300 focus:ring focus:ring-teal-200 focus:ring-opacity-50" 
                     />
-                    <span className="text-sm">Compliance Dashboard & Reports (+₹699/month)</span>
+                    <span className="text-sm">Compliance Dashboard & Reports (+₹{PRICING_CONSTANTS.COMPLIANCE_COST}/month)</span>
                   </label>
                   <label className="flex items-center">
                     <input 
@@ -487,7 +357,7 @@ export default function BusinessPlans() {
                       onChange={(e) => setNeedsAdvancedSecurity(e.target.checked)}
                       className="mr-3 rounded border-gray-300 text-teal-600 shadow-sm focus:border-teal-300 focus:ring focus:ring-teal-200 focus:ring-opacity-50" 
                     />
-                    <span className="text-sm">Advanced Security Controls (+₹1,399/month)</span>
+                    <span className="text-sm">Advanced Security Controls (+₹{PRICING_CONSTANTS.ADVANCED_SECURITY_COST}/month)</span>
                   </label>
                   <label className="flex items-center">
                     <input 
@@ -496,7 +366,7 @@ export default function BusinessPlans() {
                       onChange={(e) => setNeedsDedicatedSupport(e.target.checked)}
                       className="mr-3 rounded border-gray-300 text-teal-600 shadow-sm focus:border-teal-300 focus:ring focus:ring-teal-200 focus:ring-opacity-50" 
                     />
-                    <span className="text-sm">Dedicated Support & Account Manager (+₹2,099/month)</span>
+                    <span className="text-sm">Dedicated Support & Account Manager (+₹{PRICING_CONSTANTS.DEDICATED_SUPPORT_COST}/month)</span>
                   </label>
                   <label className="flex items-center">
                     <input 
@@ -505,7 +375,7 @@ export default function BusinessPlans() {
                       onChange={(e) => setNeedsCustomIntegrations(e.target.checked)}
                       className="mr-3 rounded border-gray-300 text-teal-600 shadow-sm focus:border-teal-300 focus:ring focus:ring-teal-200 focus:ring-opacity-50" 
                     />
-                    <span className="text-sm">Custom Integrations & APIs (+₹1,749/month)</span>
+                    <span className="text-sm">Custom Integrations & APIs (+₹{PRICING_CONSTANTS.CUSTOM_INTEGRATIONS_COST}/month)</span>
                   </label>
                 </div>
               </div>
@@ -520,39 +390,39 @@ export default function BusinessPlans() {
                 <h5 className="font-semibold text-gray-900 mb-3">Pay-As-You-Go Pricing</h5>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Storage ({storageGB} GB × ₹0.70):</span>
-                    <span className="font-medium">₹{Math.round(storageGB * STORAGE_COST_PER_GB)}</span>
+                    <span className="text-gray-600">Storage ({storageGB} GB × ₹{PRICING_CONSTANTS.STORAGE_COST_PER_GB_BUSINESS}):</span>
+                    <span className="font-medium">₹{Math.round(storageGB * PRICING_CONSTANTS.STORAGE_COST_PER_GB_BUSINESS)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Bandwidth ({bandwidthGB} GB × ₹0.35):</span>
-                    <span className="font-medium">₹{Math.round(bandwidthGB * BANDWIDTH_COST_PER_GB)}</span>
+                    <span className="text-gray-600">Bandwidth ({bandwidthGB} GB × ₹{PRICING_CONSTANTS.BANDWIDTH_COST_PER_GB}):</span>
+                    <span className="font-medium">₹{Math.round(bandwidthGB * PRICING_CONSTANTS.BANDWIDTH_COST_PER_GB)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Team Members ({Math.max(0, teamMembers - 5)} × ₹70):</span>
-                    <span className="font-medium">₹{Math.max(0, teamMembers - 5) * TEAM_MEMBER_COST}</span>
+                    <span className="text-gray-600">Team Members ({Math.max(0, teamMembers - 5)} × ₹{PRICING_CONSTANTS.TEAM_MEMBER_COST}):</span>
+                    <span className="font-medium">₹{Math.max(0, teamMembers - 5) * PRICING_CONSTANTS.TEAM_MEMBER_COST}</span>
                   </div>
                   {needsCompliance && (
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Compliance Dashboard (+₹699):</span>
-                      <span className="font-medium">₹{COMPLIANCE_COST}</span>
+                      <span className="text-gray-600">Compliance Dashboard (+₹{PRICING_CONSTANTS.COMPLIANCE_COST}):</span>
+                      <span className="font-medium">₹{PRICING_CONSTANTS.COMPLIANCE_COST}</span>
                     </div>
                   )}
                   {needsAdvancedSecurity && (
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Advanced Security (+₹1,399):</span>
-                      <span className="font-medium">₹{ADVANCED_SECURITY_COST}</span>
+                      <span className="text-gray-600">Advanced Security (+₹{PRICING_CONSTANTS.ADVANCED_SECURITY_COST}):</span>
+                      <span className="font-medium">₹{PRICING_CONSTANTS.ADVANCED_SECURITY_COST}</span>
                     </div>
                   )}
                   {needsDedicatedSupport && (
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Dedicated Support (+₹2,099):</span>
-                      <span className="font-medium">₹{DEDICATED_SUPPORT_COST}</span>
+                      <span className="text-gray-600">Dedicated Support (+₹{PRICING_CONSTANTS.DEDICATED_SUPPORT_COST}):</span>
+                      <span className="font-medium">₹{PRICING_CONSTANTS.DEDICATED_SUPPORT_COST}</span>
                     </div>
                   )}
                   {needsCustomIntegrations && (
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Custom Integrations (+₹1,749):</span>
-                      <span className="font-medium">₹{CUSTOM_INTEGRATIONS_COST}</span>
+                      <span className="text-gray-600">Custom Integrations (+₹{PRICING_CONSTANTS.CUSTOM_INTEGRATIONS_COST}):</span>
+                      <span className="font-medium">₹{PRICING_CONSTANTS.CUSTOM_INTEGRATIONS_COST}</span>
                     </div>
                   )}
                   <div className="border-t pt-2 flex justify-between font-bold">

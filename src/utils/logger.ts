@@ -3,11 +3,7 @@ interface LogEntry {
   level: 'debug' | 'info' | 'warn' | 'error';
   message: string;
   timestamp: string;
-<<<<<<< HEAD
-  context?: Record<string, unknown>;
-=======
   context?: Record<string, any>;
->>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
   userId?: string;
   sessionId?: string;
   url?: string;
@@ -53,11 +49,7 @@ class Logger {
   private createLogEntry(
     level: LogEntry['level'],
     message: string,
-<<<<<<< HEAD
-    context?: Record<string, unknown>
-=======
     context?: Record<string, any>
->>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
   ): LogEntry {
     return {
       level,
@@ -71,11 +63,7 @@ class Logger {
     };
   }
 
-<<<<<<< HEAD
-  public debug(message: string, context?: Record<string, unknown>): void {
-=======
   public debug(message: string, context?: Record<string, any>): void {
->>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
     const entry = this.createLogEntry('debug', message, context);
     this.addToQueue(entry);
     
@@ -84,31 +72,19 @@ class Logger {
     }
   }
 
-<<<<<<< HEAD
-  public info(message: string, context?: Record<string, unknown>): void {
-=======
   public info(message: string, context?: Record<string, any>): void {
->>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
     const entry = this.createLogEntry('info', message, context);
     this.addToQueue(entry);
     console.info(`[INFO] ${message}`, context);
   }
 
-<<<<<<< HEAD
-  public warn(message: string, context?: Record<string, unknown>): void {
-=======
   public warn(message: string, context?: Record<string, any>): void {
->>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
     const entry = this.createLogEntry('warn', message, context);
     this.addToQueue(entry);
     console.warn(`[WARN] ${message}`, context);
   }
 
-<<<<<<< HEAD
-  public error(message: string, context?: Record<string, unknown>): void {
-=======
   public error(message: string, context?: Record<string, any>): void {
->>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
     const entry = this.createLogEntry('error', message, context);
     this.addToQueue(entry);
     console.error(`[ERROR] ${message}`, context);
@@ -117,19 +93,16 @@ class Logger {
   private addToQueue(entry: LogEntry): void {
     this.logQueue.push(entry);
     
-    // Limit queue size
-    if (this.logQueue.length > 1000) {
-      this.logQueue = this.logQueue.slice(-500); // Keep last 500 entries
-    }
-
-    // Immediate flush for errors in production
-    if (entry.level === 'error' && this.isOnline && process.env.NODE_ENV === 'production') {
+    // If queue is getting large, flush immediately
+    if (this.logQueue.length >= 50) {
       this.flushLogs();
     }
   }
 
   private async flushLogs(): Promise<void> {
-    if (this.logQueue.length === 0 || !this.isOnline) return;
+    if (this.logQueue.length === 0 || !this.isOnline) {
+      return;
+    }
 
     const logsToSend = [...this.logQueue];
     this.logQueue = [];
@@ -137,28 +110,46 @@ class Logger {
     try {
       await fetch('/api/logs', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ logs: logsToSend })
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ logs: logsToSend }),
       });
     } catch (error) {
-      // Re-queue logs if sending failed
+      // If sending fails, add logs back to queue
       this.logQueue.unshift(...logsToSend);
-      console.error('Failed to send logs to server:', error);
+      console.warn('Failed to send logs to server:', error);
     }
   }
 
-  public async exportLogs(): Promise<string> {
-    const allLogs = [...this.logQueue];
-    return JSON.stringify(allLogs, null, 2);
+  public setContext(key: string, value: any): void {
+    // Set global context that will be added to all logs
+    if (!window._loggerContext) {
+      window._loggerContext = {};
+    }
+    window._loggerContext[key] = value;
   }
 
-  public clearLogs(): void {
+  public clearContext(): void {
+    window._loggerContext = {};
+  }
+
+  public getLogQueue(): LogEntry[] {
+    return [...this.logQueue];
+  }
+
+  public clearQueue(): void {
     this.logQueue = [];
   }
 }
 
-export default Logger;
+// Extend Window interface for TypeScript
+declare global {
+  interface Window {
+    _loggerContext?: Record<string, any>;
+  }
+}
 
-// Convenience exports
-const logger = Logger.getInstance();
-export const { debug, info, warn, error } = logger;
+// Export singleton instance
+export const logger = Logger.getInstance();
+export default logger;

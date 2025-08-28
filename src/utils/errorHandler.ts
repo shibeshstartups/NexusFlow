@@ -1,97 +1,39 @@
-import { AppError, ErrorType, ErrorSeverity, ErrorRecoveryStrategy } from '../types/errors';
+import { AppError, ErrorType, ErrorSeverity } from '../types/errors';
 
-class ErrorHandler {
-  private static instance: ErrorHandler;
-  private recoveryStrategies: Map<ErrorType, ErrorRecoveryStrategy> = new Map();
+interface RecoveryStrategy {
+  canRecover: (error: AppError) => boolean;
+  recover: (error: AppError) => Promise<boolean>;
+  fallback?: () => void;
+}
+
+export class ErrorHandler {
+  private recoveryStrategies = new Map<ErrorType, RecoveryStrategy>();
   private errorQueue: AppError[] = [];
-  private isOnline: boolean = navigator.onLine;
+  private isOnline = navigator.onLine;
+  private retryAttempts = new Map<string, number>();
+  private maxRetries = 3;
 
-  private constructor() {
-    this.setupNetworkListeners();
-    this.setupGlobalErrorHandlers();
+  constructor() {
     this.initializeRecoveryStrategies();
-  }
-
-  public static getInstance(): ErrorHandler {
-    if (!ErrorHandler.instance) {
-      ErrorHandler.instance = new ErrorHandler();
-    }
-    return ErrorHandler.instance;
+    this.setupNetworkListeners();
   }
 
   private setupNetworkListeners(): void {
     window.addEventListener('online', () => {
       this.isOnline = true;
-      this.processQueuedErrors();
+      this.processErrorQueue();
     });
 
     window.addEventListener('offline', () => {
       this.isOnline = false;
-      this.notifyOfflineState();
     });
-  }
-
-  private setupGlobalErrorHandlers(): void {
-    // Global JavaScript error handler
-    window.addEventListener('error', (event) => {
-      const error = this.createError({
-        type: ErrorType.UNKNOWN,
-        severity: ErrorSeverity.HIGH,
-        message: event.message,
-        userMessage: 'Something went wrong. Please try refreshing the page.',
-        context: {
-          filename: event.filename,
-          lineno: event.lineno,
-          colno: event.colno
-        },
-        stack: event.error?.stack
-      });
-      this.handleError(error);
-    });
-
-    // Unhandled promise rejection handler
-    window.addEventListener('unhandledrejection', (event) => {
-      const error = this.createError({
-        type: ErrorType.UNKNOWN,
-        severity: ErrorSeverity.HIGH,
-        message: event.reason?.message || 'Unhandled promise rejection',
-        userMessage: 'An unexpected error occurred. Please try again.',
-        context: { reason: event.reason },
-        stack: event.reason?.stack
-      });
-      this.handleError(error);
-    });
-
-    // Resource loading error handler
-    window.addEventListener('error', (event) => {
-      if (event.target !== window && event.target instanceof HTMLElement) {
-        const target = event.target as HTMLElement;
-        const resourceType = this.getResourceType(target);
-        const resourceUrl = this.getResourceUrl(target);
-
-        if (resourceType && resourceUrl) {
-          const error = this.createError({
-            type: ErrorType.RESOURCE_LOADING,
-            severity: ErrorSeverity.MEDIUM,
-            message: `Failed to load ${resourceType}: ${resourceUrl}`,
-            userMessage: 'Some content failed to load. The page may not display correctly.',
-            context: { resourceType, resourceUrl }
-          });
-          this.handleError(error);
-        }
-      }
-    }, true);
   }
 
   private initializeRecoveryStrategies(): void {
     // Network error recovery
     this.recoveryStrategies.set(ErrorType.NETWORK, {
       canRecover: (error) => error.type === ErrorType.NETWORK,
-<<<<<<< HEAD
-      recover: async (_error) => {
-=======
       recover: async (error) => {
->>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
         // Retry with exponential backoff
         await this.delay(1000);
         return this.isOnline;
@@ -102,23 +44,6 @@ class ErrorHandler {
     });
 
     // API error recovery
-<<<<<<< HEAD
-interface ApiError extends AppError {
-  statusCode: number;
-}
-
-interface ResourceError extends AppError {
-  resourceUrl: string;
-}
-
-    this.recoveryStrategies.set(ErrorType.API, {
-      canRecover: (error) => {
-        const apiError = error as ApiError;
-        return apiError.statusCode >= 500 || apiError.statusCode === 429;
-      },
-      recover: async (error) => {
-        const apiError = error as ApiError;
-=======
     this.recoveryStrategies.set(ErrorType.API, {
       canRecover: (error) => {
         const apiError = error as any;
@@ -126,7 +51,6 @@ interface ResourceError extends AppError {
       },
       recover: async (error) => {
         const apiError = error as any;
->>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
         if (apiError.statusCode === 429) {
           await this.delay(5000); // Rate limit backoff
         } else {
@@ -140,11 +64,7 @@ interface ResourceError extends AppError {
     this.recoveryStrategies.set(ErrorType.RESOURCE_LOADING, {
       canRecover: (error) => error.type === ErrorType.RESOURCE_LOADING,
       recover: async (error) => {
-<<<<<<< HEAD
-        const resourceError = error as ResourceError;
-=======
         const resourceError = error as any;
->>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
         // Try loading from CDN fallback
         return this.loadFallbackResource(resourceError.resourceUrl);
       },
@@ -178,104 +98,33 @@ interface ResourceError extends AppError {
         return;
       }
 
-      // Send to monitoring service
-      await this.sendToMonitoring(error);
-
-      // Show user notification
-      this.showUserNotification(error);
+      // Show error to user based on severity
+      this.displayError(error);
 
     } catch (handlingError) {
-      console.error('Error in error handler:', handlingError);
-      // Fallback to basic error display
-      this.showBasicErrorMessage();
-    }
-  }
-
-  public createError(params: Partial<AppError> & { 
-    type: ErrorType; 
-    message: string; 
-    userMessage: string 
-  }): AppError {
-    return {
-      id: this.generateErrorId(),
-      severity: ErrorSeverity.MEDIUM,
-      timestamp: new Date(),
-      sessionId: this.getSessionId(),
-      userId: this.getUserId(),
-      ...params
-    };
-  }
-
-  private async processQueuedErrors(): Promise<void> {
-    const errors = [...this.errorQueue];
-    this.errorQueue = [];
-
-    for (const error of errors) {
-      await this.sendToMonitoring(error);
+      console.error('Error while handling error:', handlingError);
+      // Last resort: show generic error message
+      this.showGenericError();
     }
   }
 
   private logError(error: AppError): void {
     const logLevel = this.getLogLevel(error.severity);
-    const logData = {
-      ...error,
+    const context = {
+      id: error.id,
+      type: error.type,
+      severity: error.severity,
+      timestamp: error.timestamp,
+      stack: error.stack,
+      context: error.context,
       url: window.location.href,
-      userAgent: navigator.userAgent,
-      timestamp: error.timestamp.toISOString()
+      userAgent: navigator.userAgent
     };
 
-    console[logLevel](`[${error.type}] ${error.message}`, logData);
-  }
+    console[logLevel](`[${error.severity}] ${error.message}`, context);
 
-  private async sendToMonitoring(error: AppError): Promise<void> {
-    if (!this.isOnline) return;
-
-    try {
-      // Send to your monitoring service (Sentry, LogRocket, etc.)
-      await fetch('/api/errors', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(error)
-      });
-    } catch (monitoringError) {
-      console.error('Failed to send error to monitoring:', monitoringError);
-    }
-  }
-
-  private showUserNotification(error: AppError): void {
-    const config = this.getNotificationConfig(error);
-    if (!config.showToUser) return;
-
-    // Dispatch custom event for UI components to handle
-    window.dispatchEvent(new CustomEvent('app-error', {
-      detail: { error, config }
-    }));
-  }
-
-  private getNotificationConfig(error: AppError) {
-    switch (error.severity) {
-      case ErrorSeverity.CRITICAL:
-        return { showToUser: true, autoHide: false, allowRetry: true, showDetails: false };
-      case ErrorSeverity.HIGH:
-        return { showToUser: true, autoHide: true, hideAfter: 10000, allowRetry: true, showDetails: false };
-      case ErrorSeverity.MEDIUM:
-        return { showToUser: true, autoHide: true, hideAfter: 5000, allowRetry: false, showDetails: false };
-      default:
-        return { showToUser: false, autoHide: true, hideAfter: 3000, allowRetry: false, showDetails: false };
-    }
-  }
-
-  // Utility methods
-  private generateErrorId(): string {
-    return `err_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  }
-
-  private getSessionId(): string {
-    return sessionStorage.getItem('sessionId') || 'anonymous';
-  }
-
-  private getUserId(): string | undefined {
-    return localStorage.getItem('userId') || undefined;
+    // Send to external logging service if configured
+    this.sendToLoggingService(error, context);
   }
 
   private getLogLevel(severity: ErrorSeverity): 'error' | 'warn' | 'info' {
@@ -291,51 +140,183 @@ interface ResourceError extends AppError {
   }
 
   private shouldQueueError(error: AppError): boolean {
-    return error.type === ErrorType.API || error.type === ErrorType.NETWORK;
+    // Queue API errors and critical errors for retry when back online
+    return error.type === ErrorType.API || error.severity === ErrorSeverity.CRITICAL;
   }
 
-  private getResourceType(element: HTMLElement): string | null {
-    if (element instanceof HTMLImageElement) return 'image';
-    if (element instanceof HTMLScriptElement) return 'script';
-    if (element instanceof HTMLLinkElement) return 'stylesheet';
-    return null;
+  private async processErrorQueue(): Promise<void> {
+    const queuedErrors = [...this.errorQueue];
+    this.errorQueue = [];
+
+    for (const error of queuedErrors) {
+      try {
+        await this.handleError(error);
+      } catch (processError) {
+        console.error('Failed to process queued error:', processError);
+        // Re-queue if still having issues
+        this.errorQueue.push(error);
+      }
+    }
   }
 
-  private getResourceUrl(element: HTMLElement): string | null {
-    if (element instanceof HTMLImageElement) return element.src;
-    if (element instanceof HTMLScriptElement) return element.src;
-    if (element instanceof HTMLLinkElement) return element.href;
-    return null;
+  private displayError(error: AppError): void {
+    // Emit custom event for UI components to handle
+    const errorEvent = new CustomEvent('appError', {
+      detail: {
+        error,
+        config: this.getDisplayConfig(error)
+      }
+    });
+    window.dispatchEvent(errorEvent);
+  }
+
+  private getDisplayConfig(error: AppError) {
+    return {
+      showToUser: error.severity !== ErrorSeverity.LOW,
+      autoHide: error.severity === ErrorSeverity.LOW,
+      hideAfter: error.severity === ErrorSeverity.HIGH ? 10000 : 5000,
+      allowRetry: ['API', 'NETWORK'].includes(error.type),
+      showDetails: false
+    };
   }
 
   private async delay(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
-<<<<<<< HEAD
-  private async loadFallbackResource(_url: string): Promise<boolean> {
-=======
   private async loadFallbackResource(url: string): Promise<boolean> {
->>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
-    // Implement fallback resource loading logic
-    return false;
+    try {
+      // Implement fallback resource loading logic
+      const fallbackUrl = url.replace('/api/', '/api/fallback/');
+      const response = await fetch(fallbackUrl);
+      return response.ok;
+    } catch {
+      return false;
+    }
   }
 
   private showOfflineMessage(): void {
-    window.dispatchEvent(new CustomEvent('show-offline-message'));
+    console.warn('Application is offline. Some features may be limited.');
+    // Could show toast notification or update UI state
   }
 
   private showResourceFallback(): void {
-    window.dispatchEvent(new CustomEvent('show-resource-fallback'));
+    console.warn('Resource loading failed. Using fallback.');
+    // Could show placeholder content
   }
 
-  private showBasicErrorMessage(): void {
-    alert('An unexpected error occurred. Please refresh the page and try again.');
+  private showGenericError(): void {
+    console.error('An unexpected error occurred. Please refresh the page.');
+    // Show generic error UI
   }
 
-  private notifyOfflineState(): void {
-    window.dispatchEvent(new CustomEvent('offline-state-changed', { detail: { isOnline: false } }));
+  private sendToLoggingService(error: AppError, context: any): void {
+    // Send to external logging service (Sentry, LogRocket, etc.)
+    // This would be implemented based on your logging service
+    try {
+      // Example: Send to monitoring service
+      if (window.Sentry) {
+        window.Sentry.captureException(new Error(error.message), {
+          tags: {
+            errorType: error.type,
+            severity: error.severity
+          },
+          extra: context
+        });
+      }
+    } catch (loggingError) {
+      console.error('Failed to send error to logging service:', loggingError);
+    }
+  }
+
+  public createError(
+    type: ErrorType,
+    message: string,
+    severity: ErrorSeverity = ErrorSeverity.MEDIUM,
+    context?: Record<string, any>
+  ): AppError {
+    return {
+      id: this.generateErrorId(),
+      type,
+      message,
+      userMessage: this.getUserFriendlyMessage(type, message),
+      severity,
+      timestamp: new Date(),
+      context,
+      stack: new Error().stack
+    };
+  }
+
+  private generateErrorId(): string {
+    return `error_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  }
+
+  private getUserFriendlyMessage(type: ErrorType, originalMessage: string): string {
+    const friendlyMessages = {
+      [ErrorType.NETWORK]: 'Network connection issue. Please check your internet connection.',
+      [ErrorType.API]: 'Service temporarily unavailable. Please try again.',
+      [ErrorType.VALIDATION]: 'Please check your input and try again.',
+      [ErrorType.AUTHENTICATION]: 'Please sign in to continue.',
+      [ErrorType.AUTHORIZATION]: 'You don\'t have permission to perform this action.',
+      [ErrorType.RESOURCE_LOADING]: 'Failed to load content. Please refresh the page.',
+      [ErrorType.STORAGE]: 'Unable to save data. Please try again.',
+      [ErrorType.UI]: 'An interface error occurred.',
+      [ErrorType.UNKNOWN]: 'An unexpected error occurred. Please try again.'
+    };
+
+    return friendlyMessages[type] || originalMessage;
+  }
+
+  // Public API for manual error reporting
+  public reportError(error: Error, context?: Record<string, any>): void {
+    const appError = this.createError(
+      ErrorType.UNKNOWN,
+      error.message,
+      ErrorSeverity.HIGH,
+      { ...context, originalStack: error.stack }
+    );
+    this.handleError(appError);
+  }
+
+  public reportNetworkError(url: string, status?: number): void {
+    const appError = this.createError(
+      ErrorType.NETWORK,
+      `Network request failed: ${url}`,
+      ErrorSeverity.MEDIUM,
+      { url, status }
+    );
+    this.handleError(appError);
+  }
+
+  public reportApiError(url: string, status: number, response?: any): void {
+    const severity = status >= 500 ? ErrorSeverity.HIGH : ErrorSeverity.MEDIUM;
+    const appError = this.createError(
+      ErrorType.API,
+      `API request failed: ${status}`,
+      severity,
+      { url, status, response }
+    );
+    this.handleError(appError);
   }
 }
 
-export default ErrorHandler;
+// Global error handler instance
+export const errorHandler = new ErrorHandler();
+
+// Set up global error handlers
+window.addEventListener('error', (event) => {
+  errorHandler.reportError(event.error, {
+    filename: event.filename,
+    lineno: event.lineno,
+    colno: event.colno
+  });
+});
+
+window.addEventListener('unhandledrejection', (event) => {
+  errorHandler.reportError(
+    new Error(`Unhandled promise rejection: ${event.reason}`),
+    { reason: event.reason }
+  );
+});
+
+export default errorHandler;

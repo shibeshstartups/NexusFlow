@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Check, X, Zap, Smartphone, Monitor, Star, ArrowRight } from 'lucide-react';
+import { PERSONAL_PLANS } from '../config/pricing';
 
 export default function PricingPlans() {
   const navigate = useNavigate();
@@ -14,63 +15,32 @@ export default function PricingPlans() {
       navigate(`/payment?plan=${planId}`);
     }
   };
-  const getBasePlanId = (planName: string): string => {
-    const planMap: { [key: string]: string } = {
-      'Free Plan': 'free',
-      'Starter': 'starter',
-      'Personal': 'personal',
-      'Pro': 'pro'
-    };
-    return planMap[planName] || planName.toLowerCase().replace(/\s+/g, '_');
-  };
 
-  const plans = [
-    {
-      name: 'Free Plan',
-      price: '₹0',
-      period: 'forever',
-      icon: Zap,
-      color: 'from-gray-500 to-gray-600',
-      storage: '2 GB',
-      bandwidth: '10 GB',
-      cta: 'Start Free',
-      popular: false
-    },
-    {
-      name: 'Starter',
-      price: '₹50',
-      period: 'per month',
-      icon: Smartphone,
-      color: 'from-green-600 to-green-700',
-      storage: '30 GB',
-      bandwidth: '150 GB',
-      cta: 'Start Starter',
-      popular: false
-    },
-    {
-      name: 'Personal',
-      price: '₹150',
-      period: 'per month',
-      icon: Monitor,
-      color: 'from-orange-600 to-orange-700',
-      storage: '150 GB',
-      bandwidth: '750 GB',
-      cta: 'Start Personal',
-      popular: true,
-      badge: 'Most Popular'
-    },
-    {
-      name: 'Pro',
-      price: '₹299',
-      period: 'per month',
-      icon: Star,
-      color: 'from-blue-600 to-blue-700',
-      storage: '400 GB',
-      bandwidth: '2 TB',
-      cta: 'Start Pro',
-      popular: false
+  const plans = PERSONAL_PLANS.map(plan => ({
+    ...plan,
+    icon: getIconForPlan(plan.id),
+    color: getColorForPlan(plan.id)
+  }));
+
+  function getIconForPlan(planId: string) {
+    switch (planId) {
+      case 'free': return Zap;
+      case 'starter': return Smartphone;
+      case 'personal': return Monitor;
+      case 'pro': return Star;
+      default: return Zap;
     }
-  ];
+  }
+
+  function getColorForPlan(planId: string) {
+    switch (planId) {
+      case 'free': return 'from-gray-500 to-gray-600';
+      case 'starter': return 'from-green-600 to-green-700';
+      case 'personal': return 'from-orange-600 to-orange-700';
+      case 'pro': return 'from-blue-600 to-blue-700';
+      default: return 'from-gray-500 to-gray-600';
+    }
+  }
 
   const features = [
     {
@@ -78,11 +48,11 @@ export default function PricingPlans() {
       items: [
         {
           name: 'Storage space',
-          values: ['2 GB', '30 GB', '150 GB', '400 GB']
+          values: plans.map(plan => `${plan.storage} GB`)
         },
         {
           name: 'Download bandwidth',
-          values: ['10 GB', '150 GB', '750 GB', '2 TB']
+          values: plans.map(plan => `${plan.bandwidth} GB`)
         },
         {
           name: 'File versioning',
@@ -163,16 +133,16 @@ export default function PricingPlans() {
                   <div className="space-y-1.5 mb-4">
                     <div className="flex justify-between">
                       <span className="text-gray-600 text-sm">Storage:</span>
-                      <span className="font-semibold text-sm">{plan.storage}</span>
+                      <span className="font-semibold text-sm">{plan.storage} GB</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600 text-sm">Bandwidth:</span>
-                      <span className="font-semibold text-sm">{plan.bandwidth}</span>
+                      <span className="font-semibold text-sm">{plan.bandwidth} GB</span>
                     </div>
                   </div>
 
                   <button
-                    onClick={() => handlePlanSelect(getBasePlanId(plan.name))}
+                    onClick={() => handlePlanSelect(plan.id)}
                     className={`w-full py-2.5 px-3 rounded-lg font-semibold transition-all duration-300 text-sm ${
                       plan.popular
                         ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800 shadow-lg hover:shadow-xl'

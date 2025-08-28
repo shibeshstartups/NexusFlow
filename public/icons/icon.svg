@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">
+  <rect width="192" height="192" fill="#2563eb" rx="24"/>
+  <path d="M96 40L130 80H112V130H80V80H62L96 40Z" fill="white"/>
+  <text x="96" y="160" text-anchor="middle" fill="white" font-family="sans-serif" font-size="16" font-weight="bold">NF</text>
+</svg>

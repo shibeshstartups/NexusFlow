@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 const CACHE_NAME = 'nexusflow-v2.0';
 const OFFLINE_URL = '/offline.html';
 const API_CACHE_NAME = 'nexusflow-api-v1';
@@ -25,41 +24,53 @@ const CACHE_STRATEGIES = {
   }
 };
 
-// URLs to cache during install
-=======
-const CACHE_NAME = 'nexusflow-v1';
-const OFFLINE_URL = '/offline.html';
->>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
+// URLs to cache during install - only cache what exists
 const urlsToCache = [
   '/',
   '/offline.html',
-  '/static/js/bundle.js',
-  '/static/css/main.css',
-<<<<<<< HEAD
-  '/manifest.json',
-  '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png'
-=======
   '/manifest.json'
->>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
 ];
 
 // Install event
 self.addEventListener('install', (event) => {
+  console.log('Service Worker: Install event');
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
-        return cache.addAll(urlsToCache).catch((error) => {
+        console.log('Service Worker: Caching initial resources');
+        // Only cache critical resources that exist
+        return cache.addAll(['/', '/offline.html', '/manifest.json']).catch((error) => {
           console.error('Failed to cache resources during install:', error);
-          // Cache critical resources only
-          return cache.addAll(['/']);
+          // Just cache the root path if other resources fail
+          return cache.add('/');
         });
+      })
+      .then(() => {
+        console.log('Service Worker: Initial cache completed');
       })
   );
   self.skipWaiting();
 });
 
-<<<<<<< HEAD
+// Activate event
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cacheName) => {
+          if (cacheName !== CACHE_NAME && 
+              cacheName !== API_CACHE_NAME && 
+              cacheName !== STATIC_CACHE_NAME && 
+              cacheName !== IMAGE_CACHE_NAME) {
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    })
+  );
+  self.clients.claim();
+});
+
 // Fetch event with advanced caching strategies
 self.addEventListener('fetch', (event) => {
   // Skip non-GET requests except for offline queue
@@ -67,17 +78,17 @@ self.addEventListener('fetch', (event) => {
     handleNonGetRequest(event);
     return;
   }
-=======
-// Fetch event
-self.addEventListener('fetch', (event) => {
-  // Skip non-GET requests
-  if (event.request.method !== 'GET') return;
->>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
   
   // Skip chrome-extension and other non-http requests
   if (!event.request.url.startsWith('http')) return;
+  
+  // Skip Vite HMR and development server requests
+  if (event.request.url.includes('/@vite/') || 
+      event.request.url.includes('/__vite_ping') ||
+      event.request.url.includes('/node_modules/')) {
+    return;
+  }
 
-<<<<<<< HEAD
   const url = new URL(event.request.url);
   
   // Apply different strategies based on request type
@@ -90,516 +101,311 @@ self.addEventListener('fetch', (event) => {
   } else {
     event.respondWith(handleNavigationRequest(event.request));
   }
-=======
-  event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        return cachedResponse;
-      }
-
-      return fetch(event.request).then((response) => {
-        // Don't cache non-successful responses
-        if (!response || response.status !== 200 || response.type !== 'basic') {
-          return response;
-        }
-
-        // Clone the response for caching
-        const responseToCache = response.clone();
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, responseToCache);
-        });
-
-        return response;
-      }).catch(() => {
-        // Return offline page for navigation requests
-        if (event.request.mode === 'navigate') {
-          return caches.match(OFFLINE_URL);
-        }
-        
-        // Return a generic offline response for other requests
-        return new Response('Offline', {
-          status: 503,
-          statusText: 'Service Unavailable'
-        });
-      });
-    })
-  );
->>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
 });
 
-// Activate event
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    })
-  );
-  self.clients.claim();
-});
-
-<<<<<<< HEAD
-// Enhanced background sync with retry logic
-self.addEventListener('sync', (event) => {
-  console.log('Background sync triggered:', event.tag);
-  
-  switch (event.tag) {
-    case 'upload-retry':
-      event.waitUntil(retryFailedUploads());
-      break;
-    case 'api-retry':
-      event.waitUntil(retryFailedApiRequests());
-      break;
-    case 'analytics-sync':
-      event.waitUntil(syncAnalyticsData());
-      break;
-    default:
-      event.waitUntil(retryFailedRequests());
-  }
-});
-
-// Enhanced push notification handling
-self.addEventListener('push', (event) => {
-  if (event.data) {
-    const data = event.data.json();
-    const options = {
-      body: data.body,
-      icon: data.icon || '/icons/icon-192x192.png',
-      badge: '/icons/icon-72x72.png',
-      image: data.image,
-      data: {
-        url: data.url,
-        timestamp: Date.now(),
-        ...data.data
-      },
-      actions: data.actions || [
-        {
-          action: 'view',
-          title: 'View',
-          icon: '/icons/view-icon.png'
-        },
-        {
-          action: 'dismiss',
-          title: 'Dismiss',
-          icon: '/icons/dismiss-icon.png'
-        }
-      ],
-      requireInteraction: data.requireInteraction || false,
-      silent: data.silent || false,
-      tag: data.tag,
-      renotify: data.renotify || false
-    };
-    
-    event.waitUntil(
-      self.registration.showNotification(data.title, options)
-=======
-// Background sync for failed requests
-self.addEventListener('sync', (event) => {
-  if (event.tag === 'background-sync') {
-    event.waitUntil(
-      // Retry failed requests from IndexedDB
-      retryFailedRequests()
-    );
-  }
-});
-
-// Push notification handling
-self.addEventListener('push', (event) => {
-  if (event.data) {
-    const data = event.data.json();
-    event.waitUntil(
-      self.registration.showNotification(data.title, {
-        body: data.body,
-        icon: '/icons/icon-192x192.png',
-        badge: '/icons/icon-72x72.png',
-        data: data.url
-      })
->>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
-    );
-  }
-});
-
-<<<<<<< HEAD
-// Enhanced notification click handling
-self.addEventListener('notificationclick', (event) => {
-  console.log('Notification clicked:', event.action, event.notification.data);
-  
-  event.notification.close();
-  
-  const action = event.action;
-  const data = event.notification.data;
-  
-  if (action === 'dismiss') {
-    return; // Just close the notification
-  }
-  
-  const url = action === 'view' && data.url ? data.url : '/';
-  
-  event.waitUntil(
-    clients.matchAll({ type: 'window' }).then((clientList) => {
-      // Check if there's already a window open
-      for (const client of clientList) {
-        if (client.url === url && 'focus' in client) {
-          return client.focus();
-        }
-      }
-      
-      // Open new window if none found
-      if (clients.openWindow) {
-        return clients.openWindow(url);
-      }
-    })
-  );
-});
-
-// Helper functions for request categorization
+// Request type detection
 function isApiRequest(url) {
-  return url.pathname.startsWith('/api/');
+  return url.pathname.startsWith('/api/') || url.hostname.includes('api.');
 }
 
 function isImageRequest(url) {
-  const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.bmp', '.tiff'];
-  return imageExtensions.some(ext => url.pathname.toLowerCase().includes(ext)) ||
-         url.searchParams.has('f') || // CDN format parameter
-         url.pathname.includes('/images/') ||
-         url.pathname.includes('/thumbnails/');
+  return /\.(jpg|jpeg|png|gif|webp|svg|ico)$/i.test(url.pathname);
 }
 
 function isStaticAsset(url) {
-  const staticExtensions = ['.js', '.css', '.woff', '.woff2', '.ttf', '.eot'];
-  return staticExtensions.some(ext => url.pathname.endsWith(ext)) ||
-         url.pathname.startsWith('/static/') ||
-         url.pathname.startsWith('/assets/');
+  return /\.(js|css|woff|woff2|ttf|eot)$/i.test(url.pathname);
 }
 
 function isQueueableRequest(request) {
-  // Only queue certain types of requests for background sync
-  const queueableMethods = ['POST', 'PUT', 'PATCH', 'DELETE'];
-  const url = new URL(request.url);
-  
-  return queueableMethods.includes(request.method) &&
-         (isApiRequest(url) || url.pathname.includes('/upload'));
+  return ['POST', 'PUT', 'DELETE', 'PATCH'].includes(request.method) &&
+         request.url.includes('/api/');
 }
 
-// Advanced caching strategies
-async function handleApiRequest(request) {
-  const url = new URL(request.url);
+// Cache-first strategy for static assets
+async function handleStaticAsset(request) {
+  try {
+    const cachedResponse = await caches.match(request);
+    if (cachedResponse) return cachedResponse;
+
+    const response = await fetch(request);
+    if (response.status === 200) {
+      const cache = await caches.open(STATIC_CACHE_NAME);
+      cache.put(request, response.clone());
+    }
+    return response;
+  } catch (error) {
+    console.error('Static asset fetch failed:', error);
+    return new Response('Asset unavailable', { status: 503 });
+  }
+}
+
+// Cache-first strategy for images with fallback
+async function handleImageRequest(request) {
+  try {
+    const cachedResponse = await caches.match(request);
+    if (cachedResponse) return cachedResponse;
+
+    const response = await fetch(request);
+    if (response.status === 200) {
+      const cache = await caches.open(IMAGE_CACHE_NAME);
+      cache.put(request, response.clone());
+      return response;
+    } else if (response.status === 404) {
+      // For missing icons, return a simple SVG placeholder
+      const url = new URL(request.url);
+      if (url.pathname.includes('icon-') || url.pathname.includes('.png')) {
+        return createIconPlaceholder();
+      }
+    }
+    return response;
+  } catch (error) {
+    console.warn('Image fetch failed:', request.url, error.message);
+    
+    // Check if it's an icon request
+    const url = new URL(request.url);
+    if (url.pathname.includes('icon-') || url.pathname.includes('.png') || url.pathname.includes('.svg')) {
+      return createIconPlaceholder();
+    }
+    
+    // For other images, just let it fail gracefully
+    return new Response('', { status: 404 });
+  }
+}
+
+// Create a simple SVG placeholder for missing icons
+function createIconPlaceholder() {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">
+    <rect width="192" height="192" fill="#2563eb" rx="24"/>
+    <path d="M96 40L130 80H112V130H80V80H62L96 40Z" fill="white"/>
+    <text x="96" y="160" text-anchor="middle" fill="white" font-family="sans-serif" font-size="16">NF</text>
+  </svg>`;
   
-  // Use network-first strategy for API requests
+  return new Response(svg, {
+    status: 200,
+    headers: {
+      'Content-Type': 'image/svg+xml',
+      'Cache-Control': 'public, max-age=86400'
+    }
+  });
+}
+
+// Network-first strategy for API requests
+async function handleApiRequest(request) {
   try {
     const response = await fetch(request);
     
     if (response.status === 200) {
-      // Cache successful GET responses
-      if (request.method === 'GET') {
-        const cache = await caches.open(CACHE_STRATEGIES.api.name);
-        const responseToCache = response.clone();
-        
-        // Add cache headers
-        const cachedResponse = new Response(responseToCache.body, {
-          status: responseToCache.status,
-          statusText: responseToCache.statusText,
-          headers: {
-            ...Object.fromEntries(responseToCache.headers.entries()),
-            'sw-cache': 'api',
-            'sw-cached-at': new Date().toISOString()
-          }
-        });
-        
-        await cache.put(request, cachedResponse);
-        await cleanupCache(CACHE_STRATEGIES.api);
-      }
+      const cache = await caches.open(API_CACHE_NAME);
+      cache.put(request, response.clone());
     }
     
     return response;
   } catch (error) {
-    console.log('API request failed, checking cache:', request.url);
+    console.error('API request failed, trying cache:', error);
     
-    // Try to serve from cache
     const cachedResponse = await caches.match(request);
     if (cachedResponse) {
       return cachedResponse;
     }
     
-    // Return offline response for failed API requests
-    return new Response(JSON.stringify({
-      success: false,
-      message: 'Offline - request will be retried when connection is restored',
-      offline: true
-    }), {
+    // Queue request for background sync if it's a mutation
+    if (isQueueableRequest(request)) {
+      await queueFailedRequest(request);
+    }
+    
+    return new Response(JSON.stringify({ error: 'Network unavailable' }), {
       status: 503,
       headers: { 'Content-Type': 'application/json' }
     });
   }
 }
 
-async function handleImageRequest(request) {
-  // Use cache-first strategy for images
-  const cachedResponse = await caches.match(request);
-  if (cachedResponse) {
-    return cachedResponse;
-  }
-  
+// Cache-first strategy for navigation requests
+async function handleNavigationRequest(request) {
   try {
     const response = await fetch(request);
     
     if (response.status === 200) {
-      const cache = await caches.open(CACHE_STRATEGIES.images.name);
-      await cache.put(request, response.clone());
-      await cleanupCache(CACHE_STRATEGIES.images);
+      const cache = await caches.open(CACHE_NAME);
+      cache.put(request, response.clone());
     }
     
     return response;
   } catch (error) {
-    // Return placeholder image for failed image requests
-    return new Response(
-      '<svg xmlns="http://www.w3.org/2000/svg" width="300" height="200" viewBox="0 0 300 200"><rect width="300" height="200" fill="#f0f0f0"/><text x="150" y="100" text-anchor="middle" fill="#999">Offline</text></svg>',
-      {
-        status: 200,
-        headers: { 'Content-Type': 'image/svg+xml' }
+    console.warn('Navigation request failed, checking cache:', request.url);
+    
+    const cachedResponse = await caches.match(request);
+    if (cachedResponse) {
+      console.log('Serving from cache:', request.url);
+      return cachedResponse;
+    }
+    
+    // If it's the main app route, try to serve the root page
+    if (request.mode === 'navigate') {
+      const rootResponse = await caches.match('/');
+      if (rootResponse) {
+        console.log('Serving root page for navigation:', request.url);
+        return rootResponse;
       }
+    }
+    
+    // Return offline page as last resort
+    const offlineResponse = await caches.match('/offline.html');
+    if (offlineResponse) {
+      console.log('Serving offline page for:', request.url);
+      return offlineResponse;
+    }
+    
+    // If even offline page is not available, return a basic response
+    return new Response('Service temporarily unavailable', {
+      status: 503,
+      headers: { 'Content-Type': 'text/plain' }
+    });
+  }
+}
+    return caches.match(OFFLINE_URL) || new Response('Page unavailable offline', {
+      status: 503,
+      headers: { 'Content-Type': 'text/html' }
+    });
+  }
+}
+
+// Handle non-GET requests
+function handleNonGetRequest(event) {
+  if (isQueueableRequest(event.request)) {
+    event.respondWith(
+      fetch(event.request).catch(async (error) => {
+        console.error('Non-GET request failed:', error);
+        await queueFailedRequest(event.request);
+        return new Response(JSON.stringify({ error: 'Request queued for retry' }), {
+          status: 202,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      })
     );
   }
 }
 
-async function handleStaticAsset(request) {
-  // Use cache-first strategy for static assets
-  const cachedResponse = await caches.match(request);
-  if (cachedResponse) {
-    return cachedResponse;
-  }
-  
-  try {
-    const response = await fetch(request);
-    
-    if (response.status === 200) {
-      const cache = await caches.open(CACHE_STRATEGIES.static.name);
-      await cache.put(request, response.clone());
-      await cleanupCache(CACHE_STRATEGIES.static);
-    }
-    
-    return response;
-  } catch (error) {
-    // Return empty response for failed static assets
-    return new Response('', {
-      status: 503,
-      statusText: 'Service Unavailable'
-    });
-  }
-}
-
-async function handleNavigationRequest(request) {
-  // Use network-first strategy for navigation
-  try {
-    const response = await fetch(request);
-    return response;
-  } catch (error) {
-    // Return cached offline page
-    const offlineResponse = await caches.match(OFFLINE_URL);
-    return offlineResponse || new Response('Offline', {
-      status: 503,
-      statusText: 'Service Unavailable'
-    });
-  }
-}
-
-async function handleNonGetRequest(event) {
-  const request = event.request;
-  
-  if (!isQueueableRequest(request)) {
-    return;
-  }
-  
-  event.respondWith(
-    fetch(request).catch(async (error) => {
-      console.log('Queueing failed request for background sync:', request.url);
-      
-      // Store failed request for background sync
-      await queueFailedRequest(request);
-      
-      // Register background sync
-      if ('serviceWorker' in navigator && 'sync' in window.ServiceWorkerRegistration.prototype) {
-        await self.registration.sync.register('api-retry');
-      }
-      
-      return new Response(JSON.stringify({
-        success: false,
-        message: 'Request queued for retry when connection is restored',
-        queued: true
-      }), {
-        status: 202,
-        headers: { 'Content-Type': 'application/json' }
-      });
-    })
-  );
-}
-
-// Background sync implementations
-async function retryFailedRequests() {
-  console.log('Retrying failed requests...');
-  
-  try {
-    const db = await openIndexedDB();
-    const failedRequests = await getFailedRequests(db);
-    
-    for (const requestData of failedRequests) {
-      try {
-        const response = await fetch(requestData.url, requestData.options);
-        
-        if (response.ok) {
-          // Remove successful request from queue
-          await removeFailedRequest(db, requestData.id);
-          
-          // Notify clients of successful retry
-          await notifyClients({
-            type: 'sync-success',
-            requestId: requestData.id,
-            url: requestData.url
-          });
-        }
-      } catch (error) {
-        console.log('Retry failed for:', requestData.url, error);
-        // Keep in queue for next sync
-      }
-    }
-  } catch (error) {
-    console.error('Error during background sync:', error);
-  }
-}
-
-async function retryFailedUploads() {
-  console.log('Retrying failed uploads...');
-  // Implementation for retrying file uploads
-  await retryFailedRequests();
-}
-
-async function retryFailedApiRequests() {
-  console.log('Retrying failed API requests...');
-  await retryFailedRequests();
-}
-
-async function syncAnalyticsData() {
-  console.log('Syncing analytics data...');
-  // Implementation for syncing cached analytics data
-}
-
-// Cache management functions
-async function cleanupCache(strategy) {
-  const cache = await caches.open(strategy.name);
-  const requests = await cache.keys();
-  
-  if (requests.length > strategy.maxEntries) {
-    // Remove oldest entries
-    const sortedRequests = requests.sort((a, b) => {
-      // This is a simplified sort - in reality you'd store timestamps
-      return a.url.localeCompare(b.url);
-    });
-    
-    const toDelete = sortedRequests.slice(0, requests.length - strategy.maxEntries);
-    await Promise.all(toDelete.map(request => cache.delete(request)));
-  }
-  
-  // Remove expired entries
-  for (const request of requests) {
-    const response = await cache.match(request);
-    if (response) {
-      const cachedAt = response.headers.get('sw-cached-at');
-      if (cachedAt) {
-        const age = Date.now() - new Date(cachedAt).getTime();
-        if (age > strategy.maxAge) {
-          await cache.delete(request);
-        }
-      }
-    }
-  }
-}
-
-// IndexedDB functions for offline queue
-async function openIndexedDB() {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open('nexusflow-offline', 1);
-    
-    request.onerror = () => reject(request.error);
-    request.onsuccess = () => resolve(request.result);
-    
-    request.onupgradeneeded = (event) => {
-      const db = event.target.result;
-      if (!db.objectStoreNames.contains('failed-requests')) {
-        const store = db.createObjectStore('failed-requests', { keyPath: 'id', autoIncrement: true });
-        store.createIndex('timestamp', 'timestamp', { unique: false });
-      }
-    };
-  });
-}
-
+// Queue failed requests for background sync
 async function queueFailedRequest(request) {
   try {
-    const db = await openIndexedDB();
-    const transaction = db.transaction(['failed-requests'], 'readwrite');
-    const store = transaction.objectStore('failed-requests');
-    
     const requestData = {
       url: request.url,
       method: request.method,
       headers: Object.fromEntries(request.headers.entries()),
-      body: await request.clone().text(),
+      body: request.body ? await request.clone().text() : null,
       timestamp: Date.now()
     };
     
-    await store.add(requestData);
+    // In a real implementation, you'd use IndexedDB here
+    console.log('Queuing failed request:', requestData);
+    
+    // Register for background sync
+    self.registration.sync.register('background-sync');
   } catch (error) {
     console.error('Failed to queue request:', error);
   }
 }
 
-async function getFailedRequests(db) {
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction(['failed-requests'], 'readonly');
-    const store = transaction.objectStore('failed-requests');
-    const request = store.getAll();
+// Background sync for failed requests
+self.addEventListener('sync', (event) => {
+  if (event.tag === 'background-sync') {
+    event.waitUntil(retryFailedRequests());
+  }
+});
+
+// Retry failed requests
+async function retryFailedRequests() {
+  try {
+    // In a real implementation, you'd retrieve from IndexedDB and retry
+    console.log('Retrying failed requests...');
     
-    request.onerror = () => reject(request.error);
-    request.onsuccess = () => resolve(request.result);
-  });
+    // Notify clients about successful sync
+    const clients = await self.clients.matchAll();
+    clients.forEach(client => {
+      client.postMessage({
+        type: 'SYNC_COMPLETE',
+        success: true
+      });
+    });
+  } catch (error) {
+    console.error('Failed to retry requests:', error);
+  }
 }
 
-async function removeFailedRequest(db, id) {
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction(['failed-requests'], 'readwrite');
-    const store = transaction.objectStore('failed-requests');
-    const request = store.delete(id);
+// Push notification handling
+self.addEventListener('push', (event) => {
+  if (event.data) {
+    const data = event.data.json();
     
-    request.onerror = () => reject(request.error);
-    request.onsuccess = () => resolve();
-  });
-}
-
-// Client communication
-async function notifyClients(message) {
-  const clients = await self.clients.matchAll();
-  clients.forEach(client => {
-    client.postMessage(message);
-  });
-=======
-// Notification click handling
-self.addEventListener('notificationclick', (event) => {
-  event.notification.close();
-  
-  if (event.notification.data) {
+    const options = {
+      body: data.body || 'You have a new notification',
+      icon: '/icons/icon-192x192.png',
+      badge: '/icons/icon-192x192.png',
+      tag: data.tag || 'default',
+      requireInteraction: data.requireInteraction || false,
+      actions: data.actions || []
+    };
+    
     event.waitUntil(
-      clients.openWindow(event.notification.data)
+      self.registration.showNotification(data.title || 'NexusFlow', options)
     );
   }
 });
 
-async function retryFailedRequests() {
-  // Implementation for retrying failed requests
-  // This would typically involve reading from IndexedDB
-  console.log('Retrying failed requests...');
->>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
+// Notification click handling
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  
+  if (event.action) {
+    // Handle action buttons
+    handleNotificationAction(event.action, event.notification.data);
+  } else {
+    // Default action - open the app
+    event.waitUntil(
+      self.clients.matchAll({ type: 'window' }).then((clients) => {
+        if (clients.length > 0) {
+          return clients[0].focus();
+        }
+        return self.clients.openWindow('/');
+      })
+    );
+  }
+});
+
+// Handle notification actions
+function handleNotificationAction(action, data) {
+  switch (action) {
+    case 'view':
+      self.clients.openWindow(data?.url || '/');
+      break;
+    case 'dismiss':
+      // Do nothing, notification is already closed
+      break;
+    default:
+      self.clients.openWindow('/');
+  }
+}
+
+// Periodic background sync (if supported)
+self.addEventListener('periodicsync', (event) => {
+  if (event.tag === 'content-sync') {
+    event.waitUntil(syncContent());
+  }
+});
+
+// Sync content in background
+async function syncContent() {
+  try {
+    // Sync critical content when device is idle
+    const response = await fetch('/api/sync');
+    if (response.ok) {
+      const data = await response.json();
+      // Update cache with fresh content
+      const cache = await caches.open(API_CACHE_NAME);
+      cache.put('/api/sync', new Response(JSON.stringify(data)));
+    }
+  } catch (error) {
+    console.error('Background sync failed:', error);
+  }
 }

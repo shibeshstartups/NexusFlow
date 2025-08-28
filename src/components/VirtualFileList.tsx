@@ -1,9 +1,20 @@
 import React, { useMemo, useCallback, useState, useEffect } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { FixedSizeList as List } from 'react-window';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import InfiniteLoader from 'react-window-infinite-loader';
 import { FileIcon, MoreHorizontal, Download, Share2, Trash2, Eye } from 'lucide-react';
 import { File } from '../lib/api';
+
+// Utility function to format bytes
+const formatBytes = (bytes: number, decimals = 2): string => {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const dm = decimals < 0 ? 0 : decimals;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+};
 
 interface VirtualFileListProps {
   files: File[];

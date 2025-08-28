@@ -1,13 +1,20 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, X, FileText, Code, HelpCircle, ArrowRight } from 'lucide-react';
+import { fileApi, projectApi } from '../lib/api';
+import { useAuth } from '../contexts/AuthContext';
 
 interface SearchResult {
   id: string;
   title: string;
   description: string;
-  category: 'documentation' | 'api' | 'help' | 'pricing';
+  category: 'file' | 'project' | 'documentation' | 'api' | 'help' | 'pricing';
   url: string;
   icon: React.ComponentType<any>;
+  metadata?: {
+    size?: number;
+    type?: string;
+    project?: string;
+  };
 }
 
 interface SearchModalProps {
@@ -16,16 +23,18 @@ interface SearchModalProps {
 }
 
 export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
+  const { isAuthenticated } = useAuth();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [isSearching, setIsSearching] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
 
-  // Mock search results - in a real app, this would be an API call
-  const mockResults: SearchResult[] = [
+  // Static documentation results for non-authenticated users
+  const staticResults: SearchResult[] = [
     {
-      id: '1',
+      id: 'docs-api',
       title: 'S3 API Documentation',
       description: 'Complete guide to our S3-compatible API endpoints',
       category: 'api',
@@ -33,7 +42,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
       icon: Code
     },
     {
-      id: '2',
+      id: 'docs-getting-started',
       title: 'Getting Started Guide',
       description: 'Quick start guide for new users',
       category: 'documentation',
@@ -41,15 +50,15 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
       icon: FileText
     },
     {
-      id: '3',
+      id: 'pricing-calc',
       title: 'Pricing Calculator',
       description: 'Calculate your storage and bandwidth costs',
       category: 'pricing',
-      url: '#calculator',
+      url: '/#calculator',
       icon: HelpCircle
     },
     {
-      id: '4',
+      id: 'docs-migration',
       title: 'Migration from AWS S3',
       description: 'Step-by-step guide to migrate from AWS S3',
       category: 'help',
@@ -66,17 +75,85 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
 
   useEffect(() => {
     if (query.trim()) {
-      // Filter results based on query
-      const filtered = mockResults.filter(result =>
-        result.title.toLowerCase().includes(query.toLowerCase()) ||
-        result.description.toLowerCase().includes(query.toLowerCase())
-      );
-      setResults(filtered);
-      setSelectedIndex(0);
+      performSearch(query);
     } else {
       setResults([]);
     }
-  }, [query]);
+  }, [query, isAuthenticated]);
+
+  const performSearch = async (searchQuery: string) => {
+    try {
+      setIsSearching(true);
+      const searchResults: SearchResult[] = [];
+
+      // Always include static documentation results
+      const filteredStaticResults = staticResults.filter(result =>
+        result.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        result.description.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      searchResults.push(...filteredStaticResults);
+
+      // If user is authenticated, also search files and projects
+      if (isAuthenticated) {
+        try {
+          // Search files
+          const filesResponse = await fileApi.getFiles({ search: searchQuery, limit: 10 });
+          if (filesResponse.success && filesResponse.data?.files) {
+            const fileResults: SearchResult[] = filesResponse.data.files.map(file => ({
+              id: `file-${file._id}`,
+              title: file.originalName || file.displayName,
+              description: `${file.mimeType} • ${formatFileSize(file.size)} • ${file.project?.name || 'Unknown Project'}`,
+              category: 'file' as const,
+              url: `/dashboard/files/${file._id}`,
+              icon: FileText,
+              metadata: {
+                size: file.size,
+                type: file.mimeType,
+                project: file.project?.name
+              }
+            }));
+            searchResults.push(...fileResults);
+          }
+
+          // Search projects
+          const projectsResponse = await projectApi.getProjects({ search: searchQuery, limit: 5 });
+          if (projectsResponse.success && projectsResponse.data?.projects) {
+            const projectResults: SearchResult[] = projectsResponse.data.projects.map(project => ({
+              id: `project-${project._id}`,
+              title: project.name,
+              description: project.description || `Project with ${project.metrics?.totalFiles || 0} files`,
+              category: 'project' as const,
+              url: `/dashboard/projects/${project._id}`,
+              icon: Code,
+              metadata: {
+                size: project.metrics?.totalSize
+              }
+            }));
+            searchResults.push(...projectResults);
+          }
+        } catch (apiError) {
+          console.error('Search API error:', apiError);
+          // Continue with static results even if API fails
+        }
+      }
+
+      setResults(searchResults);
+      setSelectedIndex(0);
+    } catch (error) {
+      console.error('Search error:', error);
+      setResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Escape') {
@@ -99,6 +176,8 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
       case 'documentation': return 'bg-green-100 text-green-800';
       case 'help': return 'bg-orange-100 text-orange-800';
       case 'pricing': return 'bg-purple-100 text-purple-800';
+      case 'file': return 'bg-cyan-100 text-cyan-800';
+      case 'project': return 'bg-indigo-100 text-indigo-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -120,12 +199,15 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
             <input
               ref={inputRef}
               type="text"
-              placeholder="Search documentation, API reference, help..."
+              placeholder={isAuthenticated ? "Search files, projects, documentation..." : "Search documentation, API reference, help..."}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={handleKeyDown}
               className="flex-1 text-lg outline-none"
             />
+            {isSearching && (
+              <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mr-4"></div>
+            )}
             <button
               onClick={onClose}
               className="ml-4 p-2 text-gray-400 hover:text-gray-600 transition-colors"
@@ -136,11 +218,16 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
 
           {/* Search Results */}
           <div className="max-h-96 overflow-y-auto">
-            {query.trim() && results.length === 0 && (
+            {query.trim() && results.length === 0 && !isSearching && (
               <div className="p-8 text-center text-gray-500">
                 <Search className="w-12 h-12 mx-auto mb-4 text-gray-300" />
                 <p>No results found for "{query}"</p>
-                <p className="text-sm mt-2">Try searching for API, documentation, or pricing</p>
+                <p className="text-sm mt-2">
+                  {isAuthenticated 
+                    ? "Try searching for files, projects, or documentation"
+                    : "Try searching for API, documentation, or pricing"
+                  }
+                </p>
               </div>
             )}
 
@@ -167,6 +254,19 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
                       </span>
                     </div>
                     <p className="text-sm text-gray-600">{result.description}</p>
+                    {result.metadata && (
+                      <div className="text-xs text-gray-500 mt-1">
+                        {result.metadata.size && (
+                          <span className="mr-2">Size: {formatFileSize(result.metadata.size)}</span>
+                        )}
+                        {result.metadata.type && (
+                          <span className="mr-2">Type: {result.metadata.type}</span>
+                        )}
+                        {result.metadata.project && (
+                          <span>Project: {result.metadata.project}</span>
+                        )}
+                      </div>
+                    )}
                   </div>
                   
                   <ArrowRight className="w-4 h-4 text-gray-400" />

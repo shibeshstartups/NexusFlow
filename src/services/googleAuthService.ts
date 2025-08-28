@@ -16,11 +16,11 @@ declare global {
 // Access the global google object safely
 const google = (window as any).google;
 
-import { OAuth2Client } from 'google-auth-library';
+// Note: Token verification should be done on the server side
+// This service only handles client-side Google authentication
 
 // Google OAuth configuration
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-const GOOGLE_CLIENT_SECRET = import.meta.env.VITE_GOOGLE_CLIENT_SECRET;
 
 interface GoogleUserInfo {
   sub: string;
@@ -40,19 +40,11 @@ interface GoogleAuthResponse {
 }
 
 class GoogleAuthService {
-  private client?: OAuth2Client;
-
   constructor() {
     if (!GOOGLE_CLIENT_ID) {
       console.warn('Google OAuth not configured - VITE_GOOGLE_CLIENT_ID not found');
-      this.client = undefined;
       return;
     }
-
-    this.client = new OAuth2Client({
-      clientId: GOOGLE_CLIENT_ID,
-      clientSecret: GOOGLE_CLIENT_SECRET,
-    });
   }
 
   /**
@@ -95,7 +87,7 @@ class GoogleAuthService {
           client_id: GOOGLE_CLIENT_ID,
           callback: async (response: any) => {
             try {
-              const userInfo = await this.verifyGoogleToken(response.credential);
+              const userInfo = await this.extractGoogleTokenInfo(response.credential);
               resolve({
                 success: true,
                 user: userInfo,
@@ -124,25 +116,17 @@ class GoogleAuthService {
   }
 
   /**
-   * Verify Google ID token and extract user info
+   * Extract user info from Google ID token (client-side only)
+   * Note: For production, token verification should be done on the server
    */
-  async verifyGoogleToken(idToken: string): Promise<GoogleUserInfo> {
+  async extractGoogleTokenInfo(idToken: string): Promise<GoogleUserInfo> {
     try {
-      if (!this.client) {
-        throw new Error('Google OAuth client not initialized');
-      }
-
-      const ticket = await this.client.verifyIdToken({
-        idToken,
-        audience: GOOGLE_CLIENT_ID,
-      });
-
-      const payload = ticket.getPayload();
+      // Decode JWT token (client-side only - NOT secure for production)
+      const payload = JSON.parse(atob(idToken.split('.')[1]));
       
-      if (!payload) {
-        throw new Error('Invalid Google token payload');
-      }
-
+      // In production, send the token to your backend for proper verification
+      console.warn('Client-side token decoding is not secure. Verify tokens on your server.');
+      
       return {
         sub: payload.sub || '',
         name: payload.name || '',
@@ -153,8 +137,8 @@ class GoogleAuthService {
         email_verified: payload.email_verified || false,
       };
     } catch (error) {
-      console.error('Token verification error:', error);
-      throw new Error('Failed to verify Google token');
+      console.error('Token extraction error:', error);
+      throw new Error('Failed to extract Google token info');
     }
   }
 
@@ -176,7 +160,7 @@ class GoogleAuthService {
       client_id: GOOGLE_CLIENT_ID,
       callback: async (response: any) => {
         try {
-          const userInfo = await this.verifyGoogleToken(response.credential);
+          const userInfo = await this.extractGoogleTokenInfo(response.credential);
           callback({
             success: true,
             user: userInfo,

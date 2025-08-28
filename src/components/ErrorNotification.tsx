@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 import React, { useState, useEffect, useCallback } from 'react';
-=======
-import React, { useState, useEffect } from 'react';
->>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
 import { X, AlertTriangle, AlertCircle, Info, CheckCircle, RefreshCw } from 'lucide-react';
 import { AppError, ErrorSeverity } from '../types/errors';
 
@@ -29,14 +25,11 @@ const ErrorNotification: React.FC<ErrorNotificationProps> = ({
   const [showDetails, setShowDetails] = useState(false);
   const [timeLeft, setTimeLeft] = useState(config.hideAfter ? Math.ceil(config.hideAfter / 1000) : 0);
 
-<<<<<<< HEAD
   const handleClose = useCallback(() => {
     setIsVisible(false);
     setTimeout(onClose, 300); // Allow animation to complete
   }, [onClose]);
 
-=======
->>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
   useEffect(() => {
     if (config.autoHide && config.hideAfter) {
       const interval = setInterval(() => {
@@ -51,16 +44,7 @@ const ErrorNotification: React.FC<ErrorNotificationProps> = ({
 
       return () => clearInterval(interval);
     }
-<<<<<<< HEAD
   }, [config.autoHide, config.hideAfter, handleClose]);
-=======
-  }, [config.autoHide, config.hideAfter]);
-
-  const handleClose = () => {
-    setIsVisible(false);
-    setTimeout(onClose, 300); // Allow animation to complete
-  };
->>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
 
   const getIcon = () => {
     switch (error.severity) {

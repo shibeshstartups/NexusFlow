@@ -23,7 +23,6 @@ export default tseslint.config(
         'warn',
         { allowConstantExport: true },
       ],
-<<<<<<< HEAD
       // Fix TypeScript-ESLint rule conflicts
       '@typescript-eslint/no-unused-expressions': [
         'error',
@@ -37,9 +36,7 @@ export default tseslint.config(
       'no-unused-expressions': 'off',
       // Additional TypeScript-specific rules
       '@typescript-eslint/no-explicit-any': 'warn',
-      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
-=======
->>>>>>> fd1c7be7a7b02f74f7a81d503f6a51d2e4a0a7bc
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }]
     },
   }
 );
